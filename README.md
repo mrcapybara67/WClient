@@ -24,10 +24,6 @@ Flexy H6X (Helper)
 
 RA Legend (Supporter)
 
-## Acknowledgements
-
-Special thanks to the developers and open-source projects that inspired this client, including **MuCuteClient**, **ProtoHax**, **Team-Nova**. Their work formed the foundation for many architectural and conceptual improvements in WClient.
-
 ## Features
 
 ### Combat
@@ -58,10 +54,12 @@ Special thanks to the developers and open-source projects that inspired this cli
 - Armour ESP
 - Tracer
 - DamageText
+- Shulker Preview
 
 ### Utility
 
 - Auto Armor
+- Disabler
 - Auto Disconnect
 - Inventory Helper
 - Pop Counter
