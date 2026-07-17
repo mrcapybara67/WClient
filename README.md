@@ -24,51 +24,6 @@ Flexy H6X (Helper)
 
 RA Legend (Supporter)
 
-## Features
-
-### Combat
-
-- Killaura
-- WAura
-- TriggerBot
-- OPFightBot
-- EnemyHunter
-- AutoFight
-- AutoTotem
-- AntiCrystal
-- Criticals
-- Hitbox
-
-### Movement
-
-- MotionFly
-- Speed
-- PlayerTP
-- Scaffold
-- Phase
-
-### Visual
-
-- ESP
-- Nametags
-- Armour ESP
-- Tracer
-- DamageText
-- Shulker Preview
-
-### Utility
-
-- Auto Armor
-- Disabler
-- Auto Disconnect
-- Inventory Helper
-- Pop Counter
-- Add Friend
-- Friend Manager
-- Config Import/Export
-- Crash Reporter
-- GameMode Switcher
-
 ## Platform Support
 
 WClient is primarily developed and tested for **Android**, but can interface with other platforms using MITM-style packet interception depending on setup.
