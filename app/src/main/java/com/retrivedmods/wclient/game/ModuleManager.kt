@@ -53,6 +53,7 @@ import com.retrivedmods.wclient.game.module.motion.PlayerTPModule
 import com.retrivedmods.wclient.game.module.motion.SpeedModule
 import com.retrivedmods.wclient.game.module.motion.SpiderModule
 import com.retrivedmods.wclient.game.module.motion.SprintModule
+import com.retrivedmods.wclient.game.module.visual.ChunkFinderModule
 import com.retrivedmods.wclient.game.module.visual.CrosshairModule
 import com.retrivedmods.wclient.game.module.visual.DamageTextModule
 import com.retrivedmods.wclient.game.module.visual.ESPModule
@@ -120,6 +121,7 @@ object ModuleManager {
             add(SpiderModule())
 
             // Visual
+            add(ChunkFinderModule())
             add(DamageTextModule())
             add(ESPModule())
             add(PlayerJoinModule())

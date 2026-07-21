@@ -3,6 +3,7 @@ package com.retrivedmods.wclient.overlay.hud
 import android.annotation.SuppressLint
 import com.retrivedmods.wclient.overlay.OverlayWindow
 import com.retrivedmods.wclient.overlay.OverlayManager
+import android.graphics.Color as AndroidColor
 import android.view.Gravity
 import android.view.WindowManager
 import androidx.compose.foundation.Canvas
@@ -35,6 +36,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.retrivedmods.wclient.ui.theme.WColors
+import org.cloudburstmc.math.vector.Vector3i
 import kotlin.math.cos
 import kotlin.math.sin
 
@@ -69,19 +71,25 @@ class PieChartOverlay : OverlayWindow() {
     private var borderWidth by mutableStateOf(1.5f)
     private var legendSpacing by mutableStateOf(2)
     private var legendFontSize by mutableStateOf(11)
-
     private var colorIntensity by mutableStateOf(1.0f)
+
+    // === SPAWNER DETECTION STATE ===
+    private var showSpawnerText by mutableStateOf(true)
+    private var spawnerTextSize by mutableStateOf(14)
+    private var spawnerColor by mutableStateOf(AndroidColor.RED)
+    private var detectedSpawners by mutableStateOf(setOf<Vector3i>())
 
     private val categoryColors = mapOf(
         "Rendering" to Color(0xFF00FF00),      // Bright Green
-        "Entities" to Color(0xFF0080FF),       // Bright Blue  
+        "Entities" to Color(0xFF0080FF),       // Bright Blue
         "Movement" to Color(0xFFFF00FF),       // Magenta
         "Sound" to Color(0xFFFF8000),          // Orange
         "Block Updates" to Color(0xFFFF0000),  // Bright Red
         "Effects" to Color(0xFF00FFFF),        // Cyan
         "Network" to Color(0xFFFFFF00),        // Yellow
         "World Tick" to Color(0xFF8000FF),     // Purple
-        "Unspecified" to Color(0xFFC0C0C0)     // Light Gray
+        "Unspecified" to Color(0xFFC0C0C0),    // Light Gray
+        "Spawners" to Color(0xFFFF4444)        // Red for spawners
     )
 
     companion object {
@@ -161,8 +169,6 @@ class PieChartOverlay : OverlayWindow() {
             overlayInstance.legendFontSize = size
         }
 
-
-
         fun setColorIntensity(intensity: Float) {
             overlayInstance.colorIntensity = intensity
         }
@@ -171,6 +177,23 @@ class PieChartOverlay : OverlayWindow() {
             overlayInstance._layoutParams.x = x
             overlayInstance._layoutParams.y = y
         }
+
+        // === SPAWNER DETECTION SETTERS ===
+        fun setShowSpawnerText(show: Boolean) {
+            overlayInstance.showSpawnerText = show
+        }
+
+        fun setSpawnerTextSize(size: Int) {
+            overlayInstance.spawnerTextSize = size
+        }
+
+        fun setSpawnerColor(color: Int) {
+            overlayInstance.spawnerColor = color
+        }
+
+        fun setDetectedSpawners(spawners: Set<Vector3i>) {
+            overlayInstance.detectedSpawners = spawners
+        }
     }
 
     @Composable
@@ -178,31 +201,71 @@ class PieChartOverlay : OverlayWindow() {
         if (!isOverlayEnabled()) return
 
         var animationTrigger by remember { mutableStateOf(0) }
-        
+
         LaunchedEffect(performanceData) {
             if (animateTransitions) {
                 animationTrigger++
             }
         }
 
-        PieChartContent(
-            performanceData = performanceData,
-            chartSize = chartSize,
-            showPercentages = showPercentages,
-            showLabels = showLabels,
-            transparentBackground = transparentBackground,
-            highlightLargest = highlightLargest,
-            chart3DDepth = chart3DDepth,
-            chartTilt = chartTilt,
-            borderWidth = borderWidth,
-            legendSpacing = legendSpacing,
-            legendFontSize = legendFontSize,
+        Column {
+            // Main pie chart content
+            PieChartContent(
+                performanceData = performanceData,
+                chartSize = chartSize,
+                showPercentages = showPercentages,
+                showLabels = showLabels,
+                transparentBackground = transparentBackground,
+                highlightLargest = highlightLargest,
+                chart3DDepth = chart3DDepth,
+                chartTilt = chartTilt,
+                borderWidth = borderWidth,
+                legendSpacing = legendSpacing,
+                legendFontSize = legendFontSize,
+                colorIntensity = colorIntensity
+            ) { dx, dy ->
+                _layoutParams.x += dx.toInt()
+                _layoutParams.y -= dy.toInt()
+                windowManager.updateViewLayout(composeView, _layoutParams)
+            }
 
-            colorIntensity = colorIntensity
-        ) { dx, dy ->
-            _layoutParams.x += dx.toInt()
-            _layoutParams.y -= dy.toInt()
-            windowManager.updateViewLayout(composeView, _layoutParams)
+            // Spawner detection text overlay
+            if (showSpawnerText && detectedSpawners.isNotEmpty()) {
+                SpawnerInfoOverlay(
+                    spawnerCount = detectedSpawners.size,
+                    spawnerColor = spawnerColor,
+                    spawnerTextSize = spawnerTextSize
+                )
+            }
+        }
+    }
+
+    @Composable
+    private fun SpawnerInfoOverlay(
+        spawnerCount: Int,
+        spawnerColor: Int,
+        spawnerTextSize: Int
+    ) {
+        val color = Color(
+            red = AndroidColor.red(spawnerColor) / 255f,
+            green = AndroidColor.green(spawnerColor) / 255f,
+            blue = AndroidColor.blue(spawnerColor) / 255f
+        )
+
+        Box(
+            modifier = Modifier
+                .background(
+                    color.copy(alpha = 0.15f),
+                    RoundedCornerShape(4.dp)
+                )
+                .padding(horizontal = 8.dp, vertical = 4.dp)
+        ) {
+            Text(
+                text = "⚠ SPAWNER DETECTED ($spawnerCount nearby)",
+                color = color,
+                fontSize = spawnerTextSize.sp,
+                fontWeight = FontWeight.Bold
+            )
         }
     }
 
@@ -220,7 +283,6 @@ class PieChartOverlay : OverlayWindow() {
         borderWidth: Float,
         legendSpacing: Int,
         legendFontSize: Int,
-
         colorIntensity: Float,
         onDrag: (Float, Float) -> Unit
     ) {
@@ -287,7 +349,7 @@ class PieChartOverlay : OverlayWindow() {
                                 alpha = baseColor.alpha
                             )
                             val isLargest = category == largestCategory
-                            
+
                             Text(
                                 text = if (showPercentages) {
                                     "$category ${String.format("%.2f", percentage)}%"
@@ -319,7 +381,7 @@ class PieChartOverlay : OverlayWindow() {
         val radiusX = size.width * 0.35f
         val radiusY = size.height * (0.25f * chartTilt)
         val depth = chart3DDepth.toFloat()
-        
+
         var currentAngle = -90f
 
         data.forEach { (category, time) ->
@@ -358,7 +420,7 @@ class PieChartOverlay : OverlayWindow() {
                     for (i in 0 until steps) {
                         val angle1 = startAngleRad + (endAngleRad - startAngleRad) * i / steps
                         val angle2 = startAngleRad + (endAngleRad - startAngleRad) * (i + 1) / steps
-                        
+
                         if (sin(angle1) > 0 && sin(angle2) > 0) {
                             val x1 = centerX + radiusX * cos(angle1).toFloat()
                             val y1 = centerY + radiusY * sin(angle1).toFloat()
@@ -381,7 +443,7 @@ class PieChartOverlay : OverlayWindow() {
                     }
                 }
             }
-            
+
             currentAngle += sweepAngle
         }
 
@@ -418,7 +480,7 @@ class PieChartOverlay : OverlayWindow() {
                 size = Size(drawRadiusX * 2, drawRadiusY * 2),
                 style = androidx.compose.ui.graphics.drawscope.Stroke(width = borderWidth)
             )
-            
+
             currentAngle += sweepAngle
         }
 
@@ -464,7 +526,7 @@ class PieChartOverlay : OverlayWindow() {
                     style = androidx.compose.ui.graphics.drawscope.Stroke(width = borderWidth * 0.7f)
                 )
             }
-            
+
             currentAngle += sweepAngle
         }
     }
