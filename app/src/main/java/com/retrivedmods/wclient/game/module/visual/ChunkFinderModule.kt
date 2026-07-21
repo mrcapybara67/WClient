@@ -156,15 +156,18 @@ class ChunkFinderModule : Module("ChunkFinder", ModuleCategory.Visual) {
      */
     private fun resolveBlockIdentifier(packet: UpdateBlockPacket): String? {
         return try {
-            if (::session.isInitialized && session::blockMapping.isInitialized) {
+            if (isSessionCreated) {
                 val runtimeId = packet.definition.runtimeId
-                val def = session.blockMapping.getDefinition(runtimeId)
-                def?.identifier
+                // Use try-catch because blockMapping might not be initialized yet
+                try {
+                    session.blockMapping.getDefinition(runtimeId)?.identifier
+                } catch (_: Exception) {
+                    packet.definition.toString()
+                }
             } else {
-                // Fallback: try toString() on the definition
                 packet.definition.toString()
             }
-        } catch (e: Exception) {
+        } catch (_: Exception) {
             try {
                 packet.definition.toString()
             } catch (_: Exception) {

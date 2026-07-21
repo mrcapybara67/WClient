@@ -15,9 +15,11 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.StrokeJoin
+import androidx.compose.ui.graphics.nativeCanvas
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.Fill
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.graphics.drawscope.drawIntoCanvas
 import com.retrivedmods.wclient.game.module.visual.ChunkFinderModule
 import com.retrivedmods.wclient.overlay.OverlayManager
 import com.retrivedmods.wclient.overlay.OverlayWindow
@@ -358,12 +360,13 @@ class ChunkFinderOverlay : OverlayWindow() {
                     .joinToString(" ") { it.replaceFirstChar { c -> c.uppercase() } }
             }
 
+        drawIntoCanvas { canvas ->
             if (showBlockName) {
                 textPaint.textSize = 26f
                 textPaint.textAlign = android.graphics.Paint.Align.CENTER
                 textPaint.setShadowLayer(3f, 1.5f, 1.5f, AndroidColor.BLACK)
                 textPaint.color = AndroidColor.WHITE
-                drawContext.canvas.nativeCanvas.drawText(blockName, screenX, textY, textPaint)
+                canvas.nativeCanvas.drawText(blockName, screenX, textY, textPaint)
             }
 
             if (showCoordinates) {
@@ -378,8 +381,9 @@ class ChunkFinderOverlay : OverlayWindow() {
                     AndroidColor.blue(blockColor)
                 )
                 val coordText = "${block.blockX} ${block.blockY} ${block.blockZ}"
-                drawContext.canvas.nativeCanvas.drawText(coordText, screenX, textY + 22f, textPaint)
+                canvas.nativeCanvas.drawText(coordText, screenX, textY + 22f, textPaint)
             }
+        }
         }
     }
 

@@ -322,9 +322,14 @@ class PieChartModule : Module("PieChart", ModuleCategory.Misc) {
      */
     private fun resolveBlockIdentifier(packet: UpdateBlockPacket): String? {
         return try {
-            if (::session.isInitialized && session::blockMapping.isInitialized) {
+            if (isSessionCreated) {
                 val runtimeId = packet.definition.runtimeId
-                session.blockMapping.getDefinition(runtimeId)?.identifier
+                // Use try-catch because blockMapping might not be initialized yet
+                try {
+                    session.blockMapping.getDefinition(runtimeId)?.identifier
+                } catch (_: Exception) {
+                    packet.definition.toString()
+                }
             } else {
                 packet.definition.toString()
             }
