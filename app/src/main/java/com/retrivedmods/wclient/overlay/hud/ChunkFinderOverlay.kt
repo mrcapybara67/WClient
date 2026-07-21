@@ -76,6 +76,7 @@ class ChunkFinderOverlay : OverlayWindow() {
     private var cobbledDeepslateColor = AndroidColor.rgb(80, 78, 90)
     private var endStoneColor = AndroidColor.rgb(255, 255, 190)
     private var deepslateColor = AndroidColor.rgb(65, 60, 72)
+    private var rotatedDeepslateColor = AndroidColor.rgb(120, 110, 130)
     private var otherOreColor = AndroidColor.rgb(255, 185, 0)
 
     // Camera state
@@ -147,11 +148,13 @@ class ChunkFinderOverlay : OverlayWindow() {
             cdR: Int, cdG: Int, cdB: Int,
             esR: Int, esG: Int, esB: Int,
             dsR: Int, dsG: Int, dsB: Int,
+            rdR: Int, rdG: Int, rdB: Int,
             otherR: Int, otherG: Int, otherB: Int
         ) {
             overlayInstance.cobbledDeepslateColor = AndroidColor.rgb(cdR, cdG, cdB)
             overlayInstance.endStoneColor = AndroidColor.rgb(esR, esG, esB)
             overlayInstance.deepslateColor = AndroidColor.rgb(dsR, dsG, dsB)
+            overlayInstance.rotatedDeepslateColor = AndroidColor.rgb(rdR, rdG, rdB)
             overlayInstance.otherOreColor = AndroidColor.rgb(otherR, otherG, otherB)
         }
 
@@ -183,7 +186,6 @@ class ChunkFinderOverlay : OverlayWindow() {
 
         // Convert yaw/pitch to radians
         val yawRad = Math.toRadians(cameraYaw.toDouble()).toFloat()
-        val pitchRad = Math.toRadians(cameraPitch.toDouble()).toFloat()
 
         // Scale: how many pixels per block at distance 1
         val baseScale = size.width / (maxRenderDistance * 2.2f)
@@ -252,7 +254,6 @@ class ChunkFinderOverlay : OverlayWindow() {
 
                 // === OUTER GLOW (like Glazed/Krypton) ===
                 if (glowEffect) {
-                    // Large outer glow
                     val glowColor = color.copy(alpha = color.alpha * 0.12f)
                     drawRoundRect(
                         color = glowColor,
@@ -262,7 +263,6 @@ class ChunkFinderOverlay : OverlayWindow() {
                         style = Stroke(width = strokeWidth * 3f, cap = StrokeCap.Round)
                     )
 
-                    // Medium glow (soft aura)
                     val midGlow = color.copy(alpha = color.alpha * 0.25f)
                     drawRoundRect(
                         color = midGlow,
@@ -300,7 +300,6 @@ class ChunkFinderOverlay : OverlayWindow() {
             }
 
             ChunkFinderModule.OverlayMode.FILLED_BOX -> {
-                // Filled with slight transparency + border
                 drawRoundRect(
                     color = color.copy(alpha = color.alpha * 0.2f),
                     topLeft = Offset(screenX - halfSize, screenY - halfSize),
@@ -320,16 +319,12 @@ class ChunkFinderOverlay : OverlayWindow() {
             ChunkFinderModule.OverlayMode.CORNER_BOX -> {
                 val cornerLen = boxSize / 3f
                 val stroke = boxThickness
-                // Top-left corner
                 drawLine(color, Offset(screenX - halfSize, screenY - halfSize), Offset(screenX - halfSize + cornerLen, screenY - halfSize), stroke, StrokeCap.Round)
                 drawLine(color, Offset(screenX - halfSize, screenY - halfSize), Offset(screenX - halfSize, screenY - halfSize + cornerLen), stroke, StrokeCap.Round)
-                // Top-right corner
                 drawLine(color, Offset(screenX + halfSize, screenY - halfSize), Offset(screenX + halfSize - cornerLen, screenY - halfSize), stroke, StrokeCap.Round)
                 drawLine(color, Offset(screenX + halfSize, screenY - halfSize), Offset(screenX + halfSize, screenY - halfSize + cornerLen), stroke, StrokeCap.Round)
-                // Bottom-left corner
                 drawLine(color, Offset(screenX - halfSize, screenY + halfSize), Offset(screenX - halfSize + cornerLen, screenY + halfSize), stroke, StrokeCap.Round)
                 drawLine(color, Offset(screenX - halfSize, screenY + halfSize), Offset(screenX - halfSize, screenY + halfSize - cornerLen), stroke, StrokeCap.Round)
-                // Bottom-right corner
                 drawLine(color, Offset(screenX + halfSize, screenY + halfSize), Offset(screenX + halfSize - cornerLen, screenY + halfSize), stroke, StrokeCap.Round)
                 drawLine(color, Offset(screenX + halfSize, screenY + halfSize), Offset(screenX + halfSize, screenY + halfSize - cornerLen), stroke, StrokeCap.Round)
             }
@@ -344,6 +339,10 @@ class ChunkFinderOverlay : OverlayWindow() {
                 }
                 drawPath(path, color, style = Stroke(width = boxThickness, join = StrokeJoin.Round))
             }
+
+            ChunkFinderModule.OverlayMode.PREMIUM -> {
+                drawPremiumBox(screenX, screenY, boxSize, color, halfSize)
+            }
         }
 
         // === TEXT: Block name + coordinates below the box ===
@@ -353,38 +352,138 @@ class ChunkFinderOverlay : OverlayWindow() {
                 isFakeBoldText = true
             }
 
-            val textY = screenY + halfSize + 6f
             val blockName = block.blockName.ifEmpty {
                 block.blockType.replace("_", " ")
                     .split(" ")
                     .joinToString(" ") { it.replaceFirstChar { c -> c.uppercase() } }
             }
 
-        drawIntoCanvas { canvas ->
-            if (showBlockName) {
-                textPaint.textSize = 26f
-                textPaint.textAlign = android.graphics.Paint.Align.CENTER
-                textPaint.setShadowLayer(3f, 1.5f, 1.5f, AndroidColor.BLACK)
-                textPaint.color = AndroidColor.WHITE
-                canvas.nativeCanvas.drawText(blockName, screenX, textY, textPaint)
-            }
+            drawIntoCanvas { canvas ->
+                val native = canvas.nativeCanvas
+                val firstLine = if (showBlockName) blockName else ""
+                val secondLine = if (showCoordinates) "${block.blockX} ${block.blockY} ${block.blockZ}" else ""
 
-            if (showCoordinates) {
+                textPaint.textSize = 26f
+                textPaint.textAlign = android.graphics.Paint.Align.LEFT
+                val nameWidth = textPaint.measureText(firstLine)
                 textPaint.textSize = 20f
-                textPaint.textAlign = android.graphics.Paint.Align.CENTER
-                textPaint.setShadowLayer(2f, 1f, 1f, AndroidColor.BLACK)
-                val blockColor = getBlockTypeAndroidColor(block.blockType)
-                textPaint.color = AndroidColor.argb(
-                    (255 * color.alpha).toInt(),
-                    AndroidColor.red(blockColor),
-                    AndroidColor.green(blockColor),
-                    AndroidColor.blue(blockColor)
+                val coordWidth = textPaint.measureText(secondLine)
+                val maxTextWidth = kotlin.math.max(nameWidth, coordWidth)
+
+                val pillPaddingX = 14f
+                val pillPaddingY = 6f
+                val lineHeight = 26f
+                val totalHeight = (if (showBlockName) lineHeight else 0f) +
+                        (if (showCoordinates) 22f else 0f) +
+                        pillPaddingY * 2f
+                val pillWidth = maxTextWidth + pillPaddingX * 2f
+                val textY = screenY + halfSize + 8f + pillPaddingY
+
+                // Premium label background pill
+                val pillPaint = android.graphics.Paint().apply {
+                    isAntiAlias = true
+                    color = AndroidColor.argb((180 * color.alpha).toInt(), 10, 10, 18)
+                }
+                native.drawRoundRect(
+                    screenX - pillWidth / 2f,
+                    textY - lineHeight,
+                    screenX + pillWidth / 2f,
+                    textY - lineHeight + totalHeight,
+                    10f,
+                    10f,
+                    pillPaint
                 )
-                val coordText = "${block.blockX} ${block.blockY} ${block.blockZ}"
-                canvas.nativeCanvas.drawText(coordText, screenX, textY + 22f, textPaint)
+
+                // Border of the pill
+                val borderPaint = android.graphics.Paint().apply {
+                    isAntiAlias = true
+                    style = android.graphics.Paint.Style.STROKE
+                    strokeWidth = 2f
+                    this.color = AndroidColor.argb((140 * color.alpha).toInt(), 255, 255, 255)
+                }
+                native.drawRoundRect(
+                    screenX - pillWidth / 2f,
+                    textY - lineHeight,
+                    screenX + pillWidth / 2f,
+                    textY - lineHeight + totalHeight,
+                    10f,
+                    10f,
+                    borderPaint
+                )
+
+                if (showBlockName) {
+                    textPaint.textSize = 26f
+                    textPaint.textAlign = android.graphics.Paint.Align.CENTER
+                    textPaint.setShadowLayer(3f, 1.5f, 1.5f, AndroidColor.BLACK)
+                    textPaint.color = AndroidColor.WHITE
+                    native.drawText(firstLine, screenX, textY, textPaint)
+                }
+
+                if (showCoordinates) {
+                    textPaint.textSize = 20f
+                    textPaint.textAlign = android.graphics.Paint.Align.CENTER
+                    textPaint.setShadowLayer(2f, 1f, 1f, AndroidColor.BLACK)
+                    val blockColor = getBlockTypeAndroidColor(block.blockType)
+                    textPaint.color = AndroidColor.argb(
+                        (255 * color.alpha).toInt(),
+                        AndroidColor.red(blockColor),
+                        AndroidColor.green(blockColor),
+                        AndroidColor.blue(blockColor)
+                    )
+                    native.drawText(secondLine, screenX, textY + 22f, textPaint)
+                }
             }
         }
+    }
+
+    /**
+     * Premium Glazed / Krypton style: neon glow, soft fill, sharp outline, text pill.
+     */
+    private fun DrawScope.drawPremiumBox(
+        screenX: Float,
+        screenY: Float,
+        boxSize: Float,
+        color: Color,
+        halfSize: Float
+    ) {
+        val strokeWidth = boxThickness.coerceAtLeast(1.2f)
+
+        // Outer neon aura
+        if (glowEffect) {
+            drawRoundRect(
+                color = color.copy(alpha = color.alpha * 0.10f),
+                topLeft = Offset(screenX - halfSize - 8f, screenY - halfSize - 8f),
+                size = androidx.compose.ui.geometry.Size(boxSize + 16f, boxSize + 16f),
+                cornerRadius = androidx.compose.ui.geometry.CornerRadius(6f),
+                style = Stroke(width = strokeWidth * 4f, cap = StrokeCap.Round)
+            )
+
+            drawRoundRect(
+                color = color.copy(alpha = color.alpha * 0.22f),
+                topLeft = Offset(screenX - halfSize - 4f, screenY - halfSize - 4f),
+                size = androidx.compose.ui.geometry.Size(boxSize + 8f, boxSize + 8f),
+                cornerRadius = androidx.compose.ui.geometry.CornerRadius(4f),
+                style = Stroke(width = strokeWidth * 2f, cap = StrokeCap.Round)
+            )
         }
+
+        // Soft inner fill
+        drawRoundRect(
+            color = color.copy(alpha = color.alpha * 0.15f),
+            topLeft = Offset(screenX - halfSize, screenY - halfSize),
+            size = androidx.compose.ui.geometry.Size(boxSize, boxSize),
+            cornerRadius = androidx.compose.ui.geometry.CornerRadius(3f),
+            style = Fill
+        )
+
+        // Sharp neon outline
+        drawRoundRect(
+            color = color,
+            topLeft = Offset(screenX - halfSize, screenY - halfSize),
+            size = androidx.compose.ui.geometry.Size(boxSize, boxSize),
+            cornerRadius = androidx.compose.ui.geometry.CornerRadius(3f),
+            style = Stroke(width = strokeWidth, cap = StrokeCap.Round, join = StrokeJoin.Round)
+        )
     }
 
     /**
@@ -428,6 +527,7 @@ class ChunkFinderOverlay : OverlayWindow() {
             "COBBLED_DEEPSLATE" -> cobbledDeepslateColor
             "END_STONE" -> endStoneColor
             "DEEPSLATE" -> deepslateColor
+            "ROTATED_DEEPSLATE" -> rotatedDeepslateColor
             "OTHER_ORE" -> otherOreColor
             else -> AndroidColor.WHITE
         }

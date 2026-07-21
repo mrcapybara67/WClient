@@ -15,7 +15,14 @@ class ChunkFinderModule : Module("ChunkFinder", ModuleCategory.Visual) {
     private val enableCobbledDeepslate by boolValue("Cobbled Deepslate", true)
     private val enableEndStone by boolValue("End Stone", true)
     private val enableDeepslate by boolValue("Deepslate", true)
+    private val enableRotatedDeepslate by boolValue("Rotated Deepslate", true)
     private val enableOtherOres by boolValue("Other Ores", false)
+
+    // === MINIMUM BLOCK COUNT THRESHOLDS ===
+    private val minCobbledDeepslate by intValue("Min Cobbled Deepslate", 1, 0..1000)
+    private val minEndStone by intValue("Min End Stone", 1, 0..1000)
+    private val minDeepslate by intValue("Min Deepslate", 1, 0..1000)
+    private val minRotatedDeepslate by intValue("Min Rotated Deepslate", 1, 0..1000)
 
     // === OVERLAY SETTINGS ===
     private val overlayMode by enumValue("Overlay Mode", OverlayMode.THIN_BOX, OverlayMode::class.java)
@@ -37,6 +44,10 @@ class ChunkFinderModule : Module("ChunkFinder", ModuleCategory.Visual) {
     private val deepslateColorR by intValue("DS Color R", 65, 0..255)
     private val deepslateColorG by intValue("DS Color G", 60, 0..255)
     private val deepslateColorB by intValue("DS Color B", 72, 0..255)
+
+    private val rotatedDeepslateColorR by intValue("RD Color R", 120, 0..255)
+    private val rotatedDeepslateColorG by intValue("RD Color G", 110, 0..255)
+    private val rotatedDeepslateColorB by intValue("RD Color B", 130, 0..255)
 
     private val otherOreColorR by intValue("Other Color R", 255, 0..255)
     private val otherOreColorG by intValue("Other Color G", 185, 0..255)
@@ -68,6 +79,7 @@ class ChunkFinderModule : Module("ChunkFinder", ModuleCategory.Visual) {
         COBBLED_DEEPSLATE,
         END_STONE,
         DEEPSLATE,
+        ROTATED_DEEPSLATE,
         OTHER_ORE
     }
 
@@ -75,7 +87,8 @@ class ChunkFinderModule : Module("ChunkFinder", ModuleCategory.Visual) {
         THIN_BOX,
         FILLED_BOX,
         CORNER_BOX,
-        OUTLINE_ONLY
+        OUTLINE_ONLY,
+        PREMIUM
     }
 
     private val trackedBlocks = mutableListOf<TrackedBlock>()
@@ -93,6 +106,9 @@ class ChunkFinderModule : Module("ChunkFinder", ModuleCategory.Visual) {
         "chiseled_deepslate", "deepslate_coal_ore", "deepslate_iron_ore",
         "deepslate_copper_ore", "deepslate_gold_ore", "deepslate_redstone_ore",
         "deepslate_emerald_ore", "deepslate_lapis_ore", "deepslate_diamond_ore"
+    )
+    private val rotatedDeepslateIds = setOf(
+        "rotated_deepslate", "infested_deepslate", "deepslate_rotated"
     )
     private val otherOreIds = setOf(
         "diamond_ore", "emerald_ore", "ancient_debris",
@@ -147,8 +163,17 @@ class ChunkFinderModule : Module("ChunkFinder", ModuleCategory.Visual) {
             cobbledDeepslateColorR, cobbledDeepslateColorG, cobbledDeepslateColorB,
             endStoneColorR, endStoneColorG, endStoneColorB,
             deepslateColorR, deepslateColorG, deepslateColorB,
+            rotatedDeepslateColorR, rotatedDeepslateColorG, rotatedDeepslateColorB,
             otherOreColorR, otherOreColorG, otherOreColorB
         )
+    }
+
+    private fun minCountFor(type: BlockType): Int = when (type) {
+        BlockType.COBBLED_DEEPSLATE -> minCobbledDeepslate
+        BlockType.END_STONE -> minEndStone
+        BlockType.DEEPSLATE -> minDeepslate
+        BlockType.ROTATED_DEEPSLATE -> minRotatedDeepslate
+        BlockType.OTHER_ORE -> 0
     }
 
     /**
@@ -185,6 +210,8 @@ class ChunkFinderModule : Module("ChunkFinder", ModuleCategory.Visual) {
                 BlockType.COBBLED_DEEPSLATE
             enableEndStone && endStoneIds.any { cleanId.contains(it) } ->
                 BlockType.END_STONE
+            enableRotatedDeepslate && rotatedDeepslateIds.any { cleanId.contains(it) } ->
+                BlockType.ROTATED_DEEPSLATE
             enableDeepslate && deepslateIds.any { cleanId.contains(it) } ->
                 BlockType.DEEPSLATE
             enableOtherOres && otherOreIds.any { cleanId.contains(it) } ->
@@ -231,13 +258,17 @@ class ChunkFinderModule : Module("ChunkFinder", ModuleCategory.Visual) {
 
                         // Limit tracked blocks
                         if (trackedBlocks.size > maxBlocksTracked) {
-                            trackedBlocks.removeAt(0)
+                            val removed = trackedBlocks.removeAt(0)
+                            discoveredCounts[removed.type] = (discoveredCounts[removed.type] ?: 0) - 1
                         }
 
-                        // Notify player
-                        session.displayClientMessage(
-                            "§l§b[ChunkFinder] §r§7Found §e$blockName §7at §f${pos.x} ${pos.y} ${pos.z}"
-                        )
+                        // Notify player only if the type has reached its minimum threshold
+                        val currentCount = discoveredCounts[blockType] ?: 0
+                        if (currentCount >= minCountFor(blockType)) {
+                            session.displayClientMessage(
+                                "§l§b[ChunkFinder] §r§7Found §e$blockName §7at §f${pos.x} ${pos.y} ${pos.z}"
+                            )
+                        }
 
                         updateTrackedBlocks()
                     }
@@ -284,7 +315,15 @@ class ChunkFinderModule : Module("ChunkFinder", ModuleCategory.Visual) {
             dist > maxRenderDistance * 1.5
         }
         if (trackedBlocks.size < beforeCount) {
+            recountDiscoveredCounts()
             updateTrackedBlocks()
+        }
+    }
+
+    private fun recountDiscoveredCounts() {
+        discoveredCounts.clear()
+        for (block in trackedBlocks) {
+            discoveredCounts[block.type] = (discoveredCounts[block.type] ?: 0) + 1
         }
     }
 
@@ -295,7 +334,13 @@ class ChunkFinderModule : Module("ChunkFinder", ModuleCategory.Visual) {
         val px = playerPos.x.toFloat()
         val pz = playerPos.z.toFloat()
 
-        val blockData = trackedBlocks.mapNotNull { block ->
+        // Only show block types whose discovered count is >= the configured minimum
+        val visibleBlocks = trackedBlocks.filter { block ->
+            val count = discoveredCounts[block.type] ?: 0
+            count >= minCountFor(block.type)
+        }
+
+        val blockData = visibleBlocks.mapNotNull { block ->
             val dx = block.position.x - px
             val dz = block.position.z - pz
             val dist = Math.sqrt((dx * dx + dz * dz).toDouble()).toFloat()
