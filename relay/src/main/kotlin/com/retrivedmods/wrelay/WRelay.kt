@@ -24,7 +24,7 @@ import org.cloudburstmc.protocol.bedrock.netty.initializer.BedrockChannelInitial
 import kotlin.random.Random
 
 class WRelay(
-    val localAddress: WAddress = WAddress("0.0.0.0", 19132),
+    var localAddress: WAddress = WAddress("0.0.0.0", 19132),
     val advertisement: BedrockPong = DefaultAdvertisement,
     val serverConfig: EnhancedServerConfig = EnhancedServerConfig.DEFAULT
 ) {
@@ -85,58 +85,83 @@ class WRelay(
             }
         }
 
-        advertisement
-            .ipv4Port(localAddress.port)
-            .ipv6Port(localAddress.port)
-
         serverEventLoopGroup = NioEventLoopGroup()
 
-        ServerBootstrap()
-            .group(serverEventLoopGroup)
-            .channelFactory(RakChannelFactory.server(NioDatagramChannel::class.java))
-            .option(RakChannelOption.RAK_ADVERTISEMENT, advertisement.toByteBuf())
-            .option(RakChannelOption.RAK_GUID, Random.nextLong())
-            .childHandler(object : BedrockChannelInitializer<WRelaySession.ServerSession>() {
+        var boundFuture: io.netty.channel.ChannelFuture? = null
+        val basePort = localAddress.port
+        val maxPort = basePort + 10
+        var attemptPort = basePort
 
-                override fun createSession0(peer: BedrockPeer, subClientId: Int): WRelaySession.ServerSession {
-                    println("WRelay: client connecting, creating server session")
-                    return WRelaySession(peer, subClientId, this@WRelay)
-                        .also {
-                            wRelaySession = it
-                            val config = if (remoteAddress != null && ServerCompatUtils.isProtectedServer(remoteAddress!!)) {
-                                ServerCompatUtils.getRecommendedConfig(remoteAddress!!)
-                            } else {
-                                serverConfig
-                            }
-                            connectionManager = ConnectionManager(it, config)
-                            it.onSessionCreated()
+        while (attemptPort <= maxPort && boundFuture == null) {
+            try {
+                advertisement
+                    .ipv4Port(attemptPort)
+                    .ipv6Port(attemptPort)
+
+                val future = ServerBootstrap()
+                    .group(serverEventLoopGroup)
+                    .channelFactory(RakChannelFactory.server(NioDatagramChannel::class.java))
+                    .option(RakChannelOption.RAK_ADVERTISEMENT, advertisement.toByteBuf())
+                    .option(RakChannelOption.RAK_GUID, Random.nextLong())
+                    .childHandler(object : BedrockChannelInitializer<WRelaySession.ServerSession>() {
+
+                        override fun createSession0(peer: BedrockPeer, subClientId: Int): WRelaySession.ServerSession {
+                            println("WRelay: client connecting, creating server session")
+                            return WRelaySession(peer, subClientId, this@WRelay)
+                                .also {
+                                    wRelaySession = it
+                                    val config = if (remoteAddress != null && ServerCompatUtils.isProtectedServer(remoteAddress!!)) {
+                                        ServerCompatUtils.getRecommendedConfig(remoteAddress!!)
+                                    } else {
+                                        serverConfig
+                                    }
+                                    connectionManager = ConnectionManager(it, config)
+                                    it.onSessionCreated()
+                                }
+                                .server
                         }
-                        .server
-                }
 
-                override fun initSession(session: WRelaySession.ServerSession) {
-                    println("WRelay: server session initialized")
-                }
+                        override fun initSession(session: WRelaySession.ServerSession) {
+                            println("WRelay: server session initialized")
+                        }
 
-                override fun preInitChannel(channel: Channel) {
-                    println("WRelay: preInitChannel for incoming client")
-                    channel.attr(PacketDirection.ATTRIBUTE).set(PacketDirection.CLIENT_BOUND)
-                    super.preInitChannel(channel)
-                }
+                        override fun preInitChannel(channel: Channel) {
+                            println("WRelay: preInitChannel for incoming client")
+                            channel.attr(PacketDirection.ATTRIBUTE).set(PacketDirection.CLIENT_BOUND)
+                            super.preInitChannel(channel)
+                        }
 
-            })
-            .localAddress(localAddress.inetSocketAddress)
-            .bind()
-            .awaitUninterruptibly()
-            .also {
-                try {
-                    it.channel().pipeline().remove(RakServerRateLimiter.NAME)
-                } catch (e: Exception) {
-                    println("RakServerRateLimiter not present or could not be removed: ${e.message}")
+                    })
+                    .localAddress(java.net.InetSocketAddress("0.0.0.0", attemptPort))
+                    .bind()
+                    .awaitUninterruptibly()
+
+                if (future.isSuccess) {
+                    boundFuture = future
+                } else {
+                    println("WRelay: failed to bind port $attemptPort, trying next...")
+                    attemptPort++
                 }
-                channelFuture = it
-                println("WRelay server bound to ${localAddress.hostName}:${localAddress.port}")
+            } catch (e: Exception) {
+                println("WRelay: exception binding port $attemptPort: ${e.message}")
+                e.printStackTrace()
+                attemptPort++
             }
+        }
+
+        if (boundFuture == null) {
+            throw RuntimeException("Failed to bind WRelay to any port in range $basePort-$maxPort")
+        }
+
+        localAddress = WAddress(localAddress.hostName, attemptPort)
+
+        try {
+            boundFuture.channel().pipeline().remove(RakServerRateLimiter.NAME)
+        } catch (e: Exception) {
+            println("RakServerRateLimiter not present or could not be removed: ${e.message}")
+        }
+        channelFuture = boundFuture
+        println("WRelay server bound to ${localAddress.hostName}:${localAddress.port}")
 
         return this
     }

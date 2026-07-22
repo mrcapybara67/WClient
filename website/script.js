@@ -1,5 +1,5 @@
 document.addEventListener('DOMContentLoaded', () => {
-    const APK_NAME = 'WClient-v18.1.8-debug.apk';
+    const APK_NAME = 'WClient-v18.1.9-debug.apk';
     const downloadBtn = document.getElementById('download-btn');
     const apkSizeEl = document.getElementById('apk-size');
     const fileSizeDetailEl = document.getElementById('file-size-detail');

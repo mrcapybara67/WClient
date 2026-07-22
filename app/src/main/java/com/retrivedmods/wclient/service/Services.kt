@@ -1,6 +1,7 @@
 package com.retrivedmods.wclient.service
 
 import android.content.Context
+import android.content.Intent
 import android.os.Build
 import android.os.Handler
 import android.os.Looper
@@ -15,6 +16,7 @@ import com.retrivedmods.wclient.game.AccountManager
 import com.retrivedmods.wclient.game.GameSession
 import com.retrivedmods.wclient.game.ModuleManager
 import com.retrivedmods.wclient.game.module.visual.ESPModule
+import com.retrivedmods.wclient.application.AppContext
 import com.retrivedmods.wclient.model.CaptureModeModel
 import com.retrivedmods.wclient.overlay.OverlayManager
 import com.retrivedmods.wclient.render.RenderOverlayView
@@ -44,6 +46,8 @@ object Services {
     var isActive by mutableStateOf(false)
     var detectedProtocolVersion by mutableStateOf<Int?>(null)
     var detectedMinecraftVersion by mutableStateOf<String?>(null)
+    var relayPort by mutableStateOf(19132)
+    var relayHost by mutableStateOf("0.0.0.0")
 
     fun toggle(context: Context, captureModeModel: CaptureModeModel) {
         if (!isActive) {
@@ -79,6 +83,24 @@ object Services {
 
         setupOverlay(context)
 
+        // Stop any previous service instance before starting a fresh one.
+        try {
+            context.stopService(Intent(context, RelayService::class.java))
+        } catch (e: Exception) {
+            Log.e("Services", "Failed to stop previous RelayService: ${e.message}")
+        }
+
+        try {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                context.startForegroundService(Intent(context, RelayService::class.java))
+            } else {
+                context.startService(Intent(context, RelayService::class.java))
+            }
+            Log.d("Services", "RelayService started")
+        } catch (e: Exception) {
+            Log.e("Services", "Failed to start RelayService: ${e.message}")
+        }
+
         thread = thread(
             name = "WRelayThread",
             priority = Thread.MAX_PRIORITY
@@ -105,14 +127,10 @@ object Services {
                     captureModeModel.serverPort
                 )
 
-                // Bind to 127.0.0.1 when the user is in localhost/Apollon mode to avoid
-                // Android kernel quirks with 0.0.0.0 on some devices (Vivo/OPPO). Bind
-                // to 0.0.0.0 for LAN mode so other devices on the network can reach us.
-                val bindAddress = if (captureModeModel.useLocalhost) {
-                    WAddress("127.0.0.1", 19132)
-                } else {
-                    WAddress("0.0.0.0", 19132)
-                }
+                // Always bind to 0.0.0.0 so the relay accepts both loopback (127.0.0.1)
+                // and LAN traffic. Some Android skins (Vivo/OPPO) route 127.0.0.1 to a
+                // socket only when it is bound to the wildcard address.
+                val bindAddress = WAddress("0.0.0.0", 19132)
 
                 val serverConfig = getServerConfig(captureModeModel)
                 // Always use WRelay directly. It handles both protected and non-protected
@@ -126,6 +144,14 @@ object Services {
                     selectedAccount?.let { OnlineLoginPacketListener(this, it) }
                         ?.let { listeners.add(it) }
                     listeners.add(GamingPacketHandler(this))
+                }
+
+                relayPort = wRelay?.localAddress?.port ?: 19132
+                relayHost = wRelay?.localAddress?.hostName ?: "0.0.0.0"
+                Log.d("Services", "WRelay bound to $relayHost:$relayPort")
+
+                if (relayPort != 19132) {
+                    context.toast("Relay using fallback port $relayPort")
                 }
             }.exceptionOrNull()?.let {
                 it.printStackTrace()
@@ -153,6 +179,15 @@ object Services {
                 }
             }
             wRelay = null
+            relayPort = 19132
+            relayHost = "0.0.0.0"
+
+            try {
+                AppContext.instance.stopService(Intent(AppContext.instance, RelayService::class.java))
+                Log.d("Services", "RelayService stopped")
+            } catch (e: Exception) {
+                Log.e("Services", "Failed to stop RelayService: ${e.message}")
+            }
 
             try {
                 Thread.sleep(500)

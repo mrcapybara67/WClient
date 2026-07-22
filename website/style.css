@@ -438,27 +438,6 @@ main {
     background: var(--accent);
 }
 
-.qr-section {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 0.5rem;
-    padding-left: 1.5rem;
-    border-left: 1px solid var(--card-border);
-}
-
-.qr-label {
-    font-size: 0.75rem;
-    color: var(--muted);
-    font-weight: 500;
-}
-
-#qr-canvas {
-    border-radius: var(--radius-sm);
-    background: white;
-    padding: 6px;
-}
-
 .hero-actions {
     display: flex;
     gap: 1rem;
@@ -932,14 +911,6 @@ section {
         flex-direction: column;
         width: 100%;
         max-width: 380px;
-    }
-
-    .qr-section {
-        padding-left: 0;
-        padding-top: 1rem;
-        border-left: none;
-        border-top: 1px solid var(--card-border);
-        width: 100%;
     }
 
     .hero-actions {

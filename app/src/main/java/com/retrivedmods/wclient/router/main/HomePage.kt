@@ -327,10 +327,28 @@ fun HomePageContent() {
                             }
                         }
 
+                        Card(
+                            modifier = Modifier.fillMaxWidth(),
+                            colors = CardDefaults.cardColors(containerColor = WColors.Accent.copy(alpha = 0.1f))
+                        ) {
+                            Column(modifier = Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                                Text("Relay status", style = MaterialTheme.typography.titleSmall, color = WColors.Accent, fontWeight = FontWeight.Bold)
+                                Text("Listening on ${Services.relayHost}:${Services.relayPort}", style = MaterialTheme.typography.bodyMedium)
+                            }
+                        }
+
                         if (currentModel.useLocalhost) {
-                            Text("Open Minecraft → Servers → Add Server and use IP 127.0.0.1 with port 19132.", style = MaterialTheme.typography.bodyMedium)
+                            Text("Open Minecraft → Servers → Add Server and use IP 127.0.0.1 with port ${Services.relayPort}. This is the recommended mode when Minecraft is on this phone. If 127.0.0.1 times out on Vivo/OPPO, use the exact Wi-Fi IP shown below instead.", style = MaterialTheme.typography.bodyMedium)
                         } else {
-                            Text("Open Minecraft → Friends → join via LAN. If it doesn't appear, add a server with this IP and port.", style = MaterialTheme.typography.bodyMedium)
+                            Text("LAN mode is only for when Minecraft is on a DIFFERENT device on the same Wi-Fi. Add a server with the IP and port below.", style = MaterialTheme.typography.bodyMedium)
+                            Card(
+                                modifier = Modifier.fillMaxWidth(),
+                                colors = CardDefaults.cardColors(containerColor = WColors.Error.copy(alpha = 0.1f))
+                            ) {
+                                Column(modifier = Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                                    Text("If Minecraft is on this phone, turn ON localhost/Apollon mode in Game settings.", style = MaterialTheme.typography.bodySmall, color = WColors.Error)
+                                }
+                            }
                         }
 
                         Card(
@@ -373,18 +391,17 @@ fun HomePageContent() {
                                     modifier = Modifier.fillMaxWidth(),
                                     horizontalArrangement = Arrangement.SpaceBetween,
                                     verticalAlignment = Alignment.CenterVertically
-                                ) {
-                                    Text("Port", style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Bold), modifier = Modifier.weight(1f))
+                                ) {                                        Text("Port", style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Bold), modifier = Modifier.weight(1f))
                                     Row(
                                         modifier = Modifier.weight(2f),
                                         horizontalArrangement = Arrangement.SpaceBetween,
                                         verticalAlignment = Alignment.CenterVertically
                                     ) {
-                                        Text("19132", style = MaterialTheme.typography.bodyLarge)
+                                        Text(Services.relayPort.toString(), style = MaterialTheme.typography.bodyLarge)
                                         androidx.compose.material3.IconButton(
                                             onClick = {
                                                 val clipboard = context.getSystemService<ClipboardManager>()
-                                                val clip = ClipData.newPlainText("Port", "19132")
+                                                val clip = ClipData.newPlainText("Port", Services.relayPort.toString())
                                                 clipboard?.setPrimaryClip(clip)
                                                 coroutineScope.launch {
                                                     snackbarHostState.showSnackbar("Port copied to clipboard")
@@ -616,9 +633,9 @@ private fun GameCard() {
                                 horizontalArrangement = Arrangement.SpaceBetween,
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
-                                Column {
+                                Column(Modifier.weight(1f)) {
                                     Text("Use localhost / Apollon mode", style = MaterialTheme.typography.bodyMedium)
-                                    Text("127.0.0.1 in Minecraft (recommended)", style = MaterialTheme.typography.bodySmall, color = WColors.OnSurfaceVariant)
+                                    Text("Use this when Minecraft is on THIS phone. Use 127.0.0.1:19132 in Minecraft.", style = MaterialTheme.typography.bodySmall, color = WColors.OnSurfaceVariant)
                                 }
                                 Switch(
                                     checked = captureModeModel.useLocalhost,
@@ -627,6 +644,25 @@ private fun GameCard() {
                                     },
                                     enabled = !Services.isActive
                                 )
+                            }
+
+                            if (!captureModeModel.useLocalhost) {
+                                Card(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    shape = MaterialTheme.shapes.medium,
+                                    colors = CardDefaults.cardColors(
+                                        containerColor = WColors.Error.copy(alpha = 0.1f),
+                                        contentColor = WColors.Error
+                                    )
+                                ) {
+                                    Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                                        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                            Icon(Icons.Outlined.Info, contentDescription = null, modifier = Modifier.size(18.dp), tint = WColors.Error)
+                                            Text("LAN mode is for another device", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold)
+                                        }
+                                        Text("Only use LAN mode if Minecraft is running on a DIFFERENT device on the same Wi-Fi. If Minecraft is on this phone, turn localhost ON.", style = MaterialTheme.typography.bodySmall)
+                                    }
+                                }
                             }
 
                             if (ServerCompatUtils.isProtectedServer(serverHostName) && !Services.isActive) {
