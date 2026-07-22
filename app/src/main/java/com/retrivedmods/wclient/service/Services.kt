@@ -26,7 +26,6 @@ import com.retrivedmods.wrelay.definition.Definitions
 import com.retrivedmods.wrelay.listener.AutoCodecPacketListener
 import com.retrivedmods.wrelay.listener.GamingPacketHandler
 import com.retrivedmods.wrelay.listener.OnlineLoginPacketListener
-import com.retrivedmods.wrelay.util.captureGamePacket
 import com.retrivedmods.wclient.util.ServerCompatUtils
 import java.io.File
 import kotlin.concurrent.thread
@@ -111,28 +110,17 @@ object Services {
                 val bindAddress = WAddress("0.0.0.0", 19132)
 
                 val serverConfig = getServerConfig(captureModeModel)
-                wRelay = if (captureModeModel.isProtectedServer() && captureModeModel.enableServerOptimizations) {
-                    WRelay(
-                        localAddress = bindAddress,
-                        serverConfig = serverConfig
-                    ).capture(remoteAddress = remoteAddress) {
-                        initModules(this)
-                        listeners.add(AutoCodecPacketListener(this))
-                        selectedAccount?.let { OnlineLoginPacketListener(this, it) }
-                            ?.let { listeners.add(it) }
-                        listeners.add(GamingPacketHandler(this))
-                    }
-                } else {
-                    captureGamePacket(
-                        localAddress = bindAddress,
-                        remoteAddress = remoteAddress
-                    ) {
-                        initModules(this)
-                        listeners.add(AutoCodecPacketListener(this))
-                        selectedAccount?.let { OnlineLoginPacketListener(this, it) }
-                            ?.let { listeners.add(it) }
-                        listeners.add(GamingPacketHandler(this))
-                    }
+                // Always use WRelay directly. It handles both protected and non-protected
+                // servers and is more reliable than the legacy captureGamePacket helper.
+                wRelay = WRelay(
+                    localAddress = bindAddress,
+                    serverConfig = serverConfig
+                ).capture(remoteAddress = remoteAddress) {
+                    initModules(this)
+                    listeners.add(AutoCodecPacketListener(this))
+                    selectedAccount?.let { OnlineLoginPacketListener(this, it) }
+                        ?.let { listeners.add(it) }
+                    listeners.add(GamingPacketHandler(this))
                 }
             }.exceptionOrNull()?.let {
                 it.printStackTrace()
