@@ -382,7 +382,7 @@ class ChunkFinderOverlay : OverlayWindow() {
                 // Premium label background pill
                 val pillPaint = android.graphics.Paint().apply {
                     isAntiAlias = true
-                    color = AndroidColor.argb((180 * color.alpha).toInt(), 10, 10, 18)
+                    this.color = AndroidColor.argb((180 * color.alpha).toInt(), 10, 10, 18)
                 }
                 native.drawRoundRect(
                     screenX - pillWidth / 2f,
