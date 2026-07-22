@@ -3,7 +3,6 @@ package com.retrivedmods.wrelay
 import com.retrivedmods.wrelay.WRelaySession.ClientSession
 import com.retrivedmods.wrelay.address.WAddress
 import com.retrivedmods.wrelay.address.inetSocketAddress
-import com.retrivedmods.wrelay.client.ClientIdentification
 import com.retrivedmods.wrelay.codec.CodecRegistry
 import com.retrivedmods.wrelay.config.EnhancedServerConfig
 import com.retrivedmods.wrelay.connection.ConnectionManager
@@ -55,6 +54,7 @@ class WRelay(
         get() = channelFuture != null
 
     private var channelFuture: ChannelFuture? = null
+    private var serverEventLoopGroup: NioEventLoopGroup? = null
 
     var wRelaySession: WRelaySession? = null
         internal set
@@ -89,16 +89,20 @@ class WRelay(
             .ipv4Port(localAddress.port)
             .ipv6Port(localAddress.port)
 
+        serverEventLoopGroup = NioEventLoopGroup()
+
         ServerBootstrap()
-            .group(NioEventLoopGroup())
+            .group(serverEventLoopGroup)
             .channelFactory(RakChannelFactory.server(NioDatagramChannel::class.java))
             .option(RakChannelOption.RAK_ADVERTISEMENT, advertisement.toByteBuf())
             .option(RakChannelOption.RAK_GUID, Random.nextLong())
-            .option(RakChannelOption.RAK_SUPPORTED_PROTOCOLS, intArrayOf(11))
-            .option(RakChannelOption.RAK_UNCONNECTED_MAGIC, ClientIdentification.createMinecraftUnconnectedMagic())
+            .option(RakChannelOption.RAK_SUPPORTED_PROTOCOLS, intArrayOf(11, 10))
+            .option(RakChannelOption.RAK_MIN_MTU, 576)
+            .option(RakChannelOption.RAK_MAX_MTU, 1492)
             .childHandler(object : BedrockChannelInitializer<WRelaySession.ServerSession>() {
 
                 override fun createSession0(peer: BedrockPeer, subClientId: Int): WRelaySession.ServerSession {
+                    println("WRelay: client connecting, creating server session")
                     return WRelaySession(peer, subClientId, this@WRelay)
                         .also {
                             wRelaySession = it
@@ -113,9 +117,12 @@ class WRelay(
                         .server
                 }
 
-                override fun initSession(session: WRelaySession.ServerSession) {}
+                override fun initSession(session: WRelaySession.ServerSession) {
+                    println("WRelay: server session initialized")
+                }
 
                 override fun preInitChannel(channel: Channel) {
+                    println("WRelay: preInitChannel for incoming client")
                     channel.attr(PacketDirection.ATTRIBUTE).set(PacketDirection.CLIENT_BOUND)
                     super.preInitChannel(channel)
                 }
@@ -127,6 +134,7 @@ class WRelay(
             .also {
                 it.channel().pipeline().remove(RakServerRateLimiter.NAME)
                 channelFuture = it
+                println("WRelay server bound to ${localAddress.hostName}:${localAddress.port} (protocols: 11, 10)")
             }
 
         return this
@@ -175,6 +183,13 @@ class WRelay(
             connectionManager = null
         } catch (e: Exception) {
             println("Error stopping WRelay: ${e.message}")
+        } finally {
+            try {
+                serverEventLoopGroup?.shutdownGracefully()?.sync()
+            } catch (e: Exception) {
+                println("Error shutting down event loop group: ${e.message}")
+            }
+            serverEventLoopGroup = null
         }
     }
 }
