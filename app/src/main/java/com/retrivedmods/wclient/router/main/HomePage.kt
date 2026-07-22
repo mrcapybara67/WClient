@@ -597,7 +597,10 @@ private fun GameCard() {
                                 horizontalArrangement = Arrangement.SpaceBetween,
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
-                                Text("Bind to localhost (mobile data)", style = MaterialTheme.typography.bodyMedium)
+                                Column {
+                                    Text("Mobile data mode", style = MaterialTheme.typography.bodyMedium)
+                                    Text("Use 127.0.0.1 in Minecraft", style = MaterialTheme.typography.bodySmall, color = WColors.OnSurfaceVariant)
+                                }
                                 Switch(
                                     checked = captureModeModel.useLocalhost,
                                     onCheckedChange = {

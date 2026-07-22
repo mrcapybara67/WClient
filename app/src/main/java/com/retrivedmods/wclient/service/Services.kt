@@ -55,34 +55,6 @@ object Services {
         off()
     }
 
-    private fun clearNetworkCaches() {
-        try {
-            val inetAddressClass = Class.forName("java.net.InetAddress")
-            val cacheField = inetAddressClass.getDeclaredField("addressCache")
-            cacheField.isAccessible = true
-            val cache = cacheField.get(null)
-            val cacheMapField = cache.javaClass.getDeclaredField("cache")
-            cacheMapField.isAccessible = true
-            val cacheMap = cacheMapField.get(cache) as? java.util.Map<*, *>
-            cacheMap?.clear()
-
-            val negativeCacheField = inetAddressClass.getDeclaredField("negativeCache")
-            negativeCacheField.isAccessible = true
-            val negativeCache = negativeCacheField.get(null)
-            val negativeCacheMapField = negativeCache.javaClass.getDeclaredField("cache")
-            negativeCacheMapField.isAccessible = true
-            val negativeCacheMap = negativeCacheMapField.get(negativeCache) as? java.util.Map<*, *>
-            negativeCacheMap?.clear()
-
-            System.gc()
-            System.runFinalization()
-
-            Log.d("Services", "Network caches cleared")
-        } catch (e: Exception) {
-            Log.e("Services", "Error clearing network caches: ${e.message}")
-        }
-    }
-
     private fun on(context: Context, captureModeModel: CaptureModeModel) {
         if (thread != null) {
             return
@@ -129,15 +101,14 @@ object Services {
             val selectedAccount = AccountManager.selectedAccount
 
             runCatching {
-                clearNetworkCaches()
-
                 val remoteAddress = WAddress(
                     captureModeModel.serverHostName,
                     captureModeModel.serverPort
                 )
 
-                val bindIp = if (captureModeModel.useLocalhost) "127.0.0.1" else "0.0.0.0"
-                val bindAddress = WAddress(bindIp, 19132)
+                // Always bind to 0.0.0.0 so the relay is reachable on both LAN (Wi-Fi)
+                // and loopback (127.0.0.1, mobile data).
+                val bindAddress = WAddress("0.0.0.0", 19132)
 
                 val serverConfig = getServerConfig(captureModeModel)
                 wRelay = if (captureModeModel.isProtectedServer() && captureModeModel.enableServerOptimizations) {
@@ -189,8 +160,6 @@ object Services {
                 }
             }
             wRelay = null
-
-            clearNetworkCaches()
 
             try {
                 Thread.sleep(500)
