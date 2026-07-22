@@ -66,6 +66,7 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarResult
 import androidx.compose.material3.Surface
+import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
 import androidx.compose.material3.TextFieldDefaults
@@ -270,14 +271,17 @@ fun HomePageContent() {
 
 
         if (showConnectionDialog) {
-            val ipAddress = remember {
-                runCatching {
-                    NetworkInterface.getNetworkInterfaces().asSequence()
-                        .flatMap { it.inetAddresses.asSequence() }
-                        .filterIsInstance<Inet4Address>()
-                        .firstOrNull { !it.isLoopbackAddress }
-                        ?.hostAddress
-                }.getOrNull() ?: "127.0.0.1"
+            val ipAddress = remember(mainScreenViewModel.captureModeModel.value.useLocalhost) {
+                if (mainScreenViewModel.captureModeModel.value.useLocalhost) "127.0.0.1"
+                else {
+                    runCatching {
+                        NetworkInterface.getNetworkInterfaces().asSequence()
+                            .flatMap { it.inetAddresses.asSequence() }
+                            .filterIsInstance<Inet4Address>()
+                            .firstOrNull { !it.isLoopbackAddress }
+                            ?.hostAddress
+                    }.getOrNull() ?: "127.0.0.1"
+                }
             }
 
             AlertDialog(
@@ -304,7 +308,11 @@ fun HomePageContent() {
                             }
                         }
 
-                        Text("Open Minecraft → Friends → join via LAN. If it doesn't appear, add a server with this IP and port.", style = MaterialTheme.typography.bodyMedium)
+                        if (currentModel.useLocalhost) {
+                            Text("Open Minecraft → Servers → Add Server and use IP 127.0.0.1 with port 19132.", style = MaterialTheme.typography.bodyMedium)
+                        } else {
+                            Text("Open Minecraft → Friends → join via LAN. If it doesn't appear, add a server with this IP and port.", style = MaterialTheme.typography.bodyMedium)
+                        }
 
                         Card(
                             modifier = Modifier.fillMaxWidth(),
@@ -580,6 +588,21 @@ private fun GameCard() {
                                     },
                                     keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
                                     singleLine = true,
+                                    enabled = !Services.isActive
+                                )
+                            }
+
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Text("Bind to localhost (mobile data)", style = MaterialTheme.typography.bodyMedium)
+                                Switch(
+                                    checked = captureModeModel.useLocalhost,
+                                    onCheckedChange = {
+                                        mainScreenViewModel.selectCaptureModeModel(captureModeModel.copy(useLocalhost = it))
+                                    },
                                     enabled = !Services.isActive
                                 )
                             }

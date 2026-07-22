@@ -8,7 +8,8 @@ data class CaptureModeModel(
     val serverHostName: String,
     val serverPort: Int,
     val serverConfigType: ServerCompatUtils.ServerConfigType = ServerCompatUtils.ServerConfigType.STANDARD,
-    val enableServerOptimizations: Boolean = true
+    val enableServerOptimizations: Boolean = true,
+    val useLocalhost: Boolean = false
 ) {
 
     companion object {
@@ -35,12 +36,17 @@ data class CaptureModeModel(
                 "capture_mode_model_enable_server_optimizations",
                 true
             )
+            val useLocalhost = sharedPreferences.getBoolean(
+                "capture_mode_model_use_localhost",
+                false
+            )
 
             return CaptureModeModel(
                 serverHostName = serverHostName,
                 serverPort = serverPort,
                 serverConfigType = serverConfigType,
-                enableServerOptimizations = enableServerOptimizations
+                enableServerOptimizations = enableServerOptimizations,
+                useLocalhost = useLocalhost
             )
         }
 
@@ -63,6 +69,10 @@ data class CaptureModeModel(
             putBoolean(
                 "capture_mode_model_enable_server_optimizations",
                 enableServerOptimizations
+            )
+            putBoolean(
+                "capture_mode_model_use_localhost",
+                useLocalhost
             )
         }
     }

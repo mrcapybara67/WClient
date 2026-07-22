@@ -136,10 +136,13 @@ object Services {
                     captureModeModel.serverPort
                 )
 
+                val bindIp = if (captureModeModel.useLocalhost) "127.0.0.1" else "0.0.0.0"
+                val bindAddress = WAddress(bindIp, 19132)
+
                 val serverConfig = getServerConfig(captureModeModel)
                 wRelay = if (captureModeModel.isProtectedServer() && captureModeModel.enableServerOptimizations) {
                     WRelay(
-                        localAddress = WAddress("0.0.0.0", 19132),
+                        localAddress = bindAddress,
                         serverConfig = serverConfig
                     ).capture(remoteAddress = remoteAddress) {
                         initModules(this)
@@ -150,7 +153,7 @@ object Services {
                     }
                 } else {
                     captureGamePacket(
-                        localAddress = WAddress("0.0.0.0", 19132),
+                        localAddress = bindAddress,
                         remoteAddress = remoteAddress
                     ) {
                         initModules(this)
