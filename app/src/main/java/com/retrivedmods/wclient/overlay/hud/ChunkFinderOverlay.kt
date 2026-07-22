@@ -379,10 +379,11 @@ class ChunkFinderOverlay : OverlayWindow() {
                 val pillWidth = maxTextWidth + pillPaddingX * 2f
                 val textY = screenY + halfSize + 8f + pillPaddingY
 
-                // Premium label background pill
+                // Krypton / Glazed style dark glass pill with neon border
+                val blockAndroidColor = getBlockTypeAndroidColor(block.blockType)
                 val pillPaint = android.graphics.Paint().apply {
                     isAntiAlias = true
-                    this.color = AndroidColor.argb((180 * color.alpha).toInt(), 10, 10, 18)
+                    this.color = AndroidColor.argb((200 * color.alpha).toInt().coerceIn(0, 255), 12, 11, 18)
                 }
                 native.drawRoundRect(
                     screenX - pillWidth / 2f,
@@ -394,12 +395,17 @@ class ChunkFinderOverlay : OverlayWindow() {
                     pillPaint
                 )
 
-                // Border of the pill
+                // Neon border from the block type color
                 val borderPaint = android.graphics.Paint().apply {
                     isAntiAlias = true
                     style = android.graphics.Paint.Style.STROKE
                     strokeWidth = 2f
-                    this.color = AndroidColor.argb((140 * color.alpha).toInt(), 255, 255, 255)
+                    this.color = AndroidColor.argb(
+                        (170 * color.alpha).toInt().coerceIn(0, 255),
+                        AndroidColor.red(blockAndroidColor),
+                        AndroidColor.green(blockAndroidColor),
+                        AndroidColor.blue(blockAndroidColor)
+                    )
                 }
                 native.drawRoundRect(
                     screenX - pillWidth / 2f,

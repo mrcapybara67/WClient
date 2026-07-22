@@ -4,7 +4,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Try to fetch the real file size from the server when served over HTTP.
     if (apkSizeEl && window.location.protocol.startsWith('http')) {
-        fetch('WClient-debug.apk', { method: 'HEAD' })
+        fetch('WClient-v18.1.4-release.apk', { method: 'HEAD' })
             .then(res => {
                 const size = res.headers.get('content-length');
                 if (size) {

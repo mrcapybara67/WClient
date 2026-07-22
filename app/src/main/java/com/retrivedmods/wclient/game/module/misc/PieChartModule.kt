@@ -21,6 +21,7 @@ import org.cloudburstmc.protocol.bedrock.packet.PlayerAuthInputPacket
 import org.cloudburstmc.protocol.bedrock.packet.RemoveEntityPacket
 import org.cloudburstmc.protocol.bedrock.packet.SetEntityDataPacket
 import org.cloudburstmc.protocol.bedrock.packet.UpdateBlockPacket
+import org.cloudburstmc.protocol.bedrock.packet.BlockEntityDataPacket
 import kotlin.random.Random
 
 class PieChartModule : Module("PieChart", ModuleCategory.Misc) {
@@ -270,6 +271,12 @@ class PieChartModule : Module("PieChart", ModuleCategory.Misc) {
                     detectSpawnerFromBlockUpdate(packet)
                 }
             }
+            is BlockEntityDataPacket -> {
+                // === SILENT SPAWNER DETECTION VIA BLOCK ENTITY DATA ===
+                if (enableSpawnerScan) {
+                    detectSpawnerFromBlockEntity(packet)
+                }
+            }
             is MobEffectPacket -> {
                 effectPackets++
             }
@@ -362,24 +369,37 @@ class PieChartModule : Module("PieChart", ModuleCategory.Misc) {
                 val pos = Vector3i.from(blockPos.x, blockPos.y, blockPos.z)
                 if (detectedSpawners.add(pos)) {
                     PieChartOverlay.setDetectedSpawners(detectedSpawners)
-
-                    // Display chat notification like Krypton Client
-                    if (showSpawnerText) {
-                        val bypassDelay = if (bypassMode) getRandomBypassDelay() else 0L
-                        val spawnerType = identifier.substringAfter("minecraft:")
-                            .substringAfter(":")
-                            .replace("_", " ")
-                            .replaceFirstChar { c -> c.uppercase() }
-
-                        scope.launch {
-                            if (bypassDelay > 0) delay(bypassDelay)
-                            // Send notification with proper § color codes like Krypton
-                            session.displayClientMessage(
-                                "§l§c⚠ §r§c[PieChart] §r§7$spawnerType §r§7found at §e${pos.x} ${pos.y} ${pos.z}"
-                            )
-                        }
-                    }
                 }
+            }
+        } catch (_: Exception) {
+            // Ignore errors silently
+        }
+    }
+
+    /**
+     * Detect mob spawners from BlockEntityDataPacket NBT data.
+     * This catches spawners sent as block entities when chunks load.
+     * Completely silent — no chat messages are sent.
+     */
+    private fun detectSpawnerFromBlockEntity(packet: BlockEntityDataPacket) {
+        try {
+            val data = packet.data ?: return
+            val id = try {
+                data.getString("id")
+            } catch (_: Exception) {
+                data["id"] as? String
+            } ?: return
+
+            if (!id.contains("Spawner", ignoreCase = true) &&
+                !id.contains("mob_spawner", ignoreCase = true)
+            ) {
+                return
+            }
+
+            val blockPos = packet.blockPosition
+            val pos = Vector3i.from(blockPos.x, blockPos.y, blockPos.z)
+            if (detectedSpawners.add(pos)) {
+                PieChartOverlay.setDetectedSpawners(detectedSpawners)
             }
         } catch (_: Exception) {
             // Ignore errors silently

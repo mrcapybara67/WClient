@@ -17,10 +17,12 @@ android {
         minSdk = 28
         //noinspection OldTargetApi,EditedTargetSdkVersion
         targetSdk = 35
-        versionCode = 4
-        versionName = "18.1.2"
+        versionCode = 6
+        versionName = "18.1.4"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+
+        resourceConfigurations += listOf("en")
 
         ndk {
             //noinspection ChromeOsAbiSupport
@@ -43,7 +45,7 @@ android {
         }
     }
     packaging {
-        jniLibs.useLegacyPackaging = true
+        jniLibs.useLegacyPackaging = false
         resources.excludes.addAll(
             setOf(
                 "DebugProbesKt.bin"
@@ -59,7 +61,10 @@ android {
     }
     buildTypes {
         debug {
+            // Keep debug non-minified for fast incremental builds.
+            // Release is minified to keep the APK well under 80 MB.
             isMinifyEnabled = false
+            isShrinkResources = false
             isDebuggable = true
             signingConfig = signingConfigs.getByName("shared")
         }
@@ -104,7 +109,7 @@ dependencies {
     implementation(platform(libs.androidx.compose.bom))
     implementation(libs.androidx.ui)
     implementation(libs.androidx.ui.graphics)
-    implementation(libs.androidx.ui.tooling.preview)
+    debugImplementation(libs.androidx.ui.tooling.preview)
     implementation(libs.androidx.material3)
     implementation(libs.androidx.navigation.compose)
     implementation(libs.androidx.material.icons.extended)
@@ -115,9 +120,6 @@ dependencies {
     androidTestImplementation(libs.androidx.ui.test.junit4)
     // debugImplementation tooling/test dependencies removed to reduce debug APK size
 
-    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.7.3")
     implementation("com.squareup.okhttp3:okhttp:4.11.0")
     implementation("androidx.browser:browser:1.6.0")
-    implementation("io.coil-kt:coil-compose:2.5.0")
-    implementation("io.coil-kt:coil-gif:2.5.0")
 }

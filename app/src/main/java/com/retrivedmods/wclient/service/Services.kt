@@ -105,8 +105,9 @@ object Services {
                     captureModeModel.serverPort
                 )
 
-                // Always bind to 0.0.0.0 so the relay is reachable on both LAN (Wi-Fi)
-                // and loopback (127.0.0.1, mobile data).
+                // Always bind to 0.0.0.0 so the relay is reachable from both loopback
+                // (127.0.0.1 / localhost) and LAN, which is required by some third-party
+                // clients such as Apollon Client.
                 val bindAddress = WAddress("0.0.0.0", 19132)
 
                 val serverConfig = getServerConfig(captureModeModel)

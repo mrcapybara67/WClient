@@ -25,7 +25,8 @@ class FreeCameraModule : Module("free_camera", ModuleCategory.World) {
     private var originalPosition: Vector3f? = null
     private var freeCamPosition: Vector3f? = null
     private var lastSentFreeCamPosition: Vector3f? = null
-    private val flySpeed by floatValue("speed", 0.15f, 0.1f..1.5f)
+    private val verticalSpeed by floatValue("verticalSpeed", 0.25f, 0.05f..2.0f)
+    private val horizontalSpeed by floatValue("horizontalSpeed", 0.25f, 0.05f..2.0f)
 
     private val enableFlyNoClipPacket = UpdateAbilitiesPacket().apply {
         playerPermission = PlayerPermission.OPERATOR
@@ -97,6 +98,7 @@ class FreeCameraModule : Module("free_camera", ModuleCategory.World) {
                 }
 
                 enableFlyNoClipPacket.uniqueEntityId = session.localPlayer.uniqueEntityId
+                enableFlyNoClipPacket.abilityLayers.firstOrNull()?.flySpeed = horizontalSpeed
                 session.clientBound(enableFlyNoClipPacket)
                 isFlyNoClipEnabled = true
             }
@@ -156,6 +158,10 @@ class FreeCameraModule : Module("free_camera", ModuleCategory.World) {
      * client camera to that position using MovePlayerPacket. This bypasses the
      * usual Y=0 anticheat/void barrier on servers like DonutSMP by teleporting
      * the local view directly instead of relying on velocity motion.
+     *
+     * Movement is now relative to the camera yaw so that forward always moves
+     * where the player is looking, and vertical/horizontal speeds are fully
+     * configurable.
      */
     private fun updateFreeCamPosition(packet: PlayerAuthInputPacket) {
         val currentPos = freeCamPosition ?: return
@@ -168,20 +174,27 @@ class FreeCameraModule : Module("free_camera", ModuleCategory.World) {
 
         // Vertical movement
         if (packet.inputData.contains(PlayerAuthInputData.JUMPING)) {
-            verticalMotion = flySpeed
+            verticalMotion = verticalSpeed
         } else if (packet.inputData.contains(PlayerAuthInputData.SNEAKING)) {
-            verticalMotion = -flySpeed
+            verticalMotion = -verticalSpeed
         }
 
-        // Horizontal movement (simplified from analog values)
+        // Horizontal movement relative to camera yaw
         val rawX = packet.motion.x
         val rawZ = packet.motion.y
         val rawLen = kotlin.math.hypot(rawX, rawZ)
         if (rawLen > 0.01f) {
-            val normX = rawX / rawLen
-            val normZ = rawZ / rawLen
-            forwardMotion = normZ * flySpeed
-            horizontalMotion = normX * flySpeed
+            val normX = rawX / rawLen // strafe (left/right)
+            val normZ = rawZ / rawLen // forward/back
+
+            // yaw in radians; use the local player's yaw so movement follows the camera
+            val yawRad = Math.toRadians(player.rotationYaw.toDouble())
+            val sinYaw = kotlin.math.sin(yawRad).toFloat()
+            val cosYaw = kotlin.math.cos(yawRad).toFloat()
+
+            // rotate the input vector so movement follows the camera direction
+            horizontalMotion = (normX * cosYaw - normZ * sinYaw) * horizontalSpeed
+            forwardMotion = (normX * sinYaw + normZ * cosYaw) * horizontalSpeed
         }
 
         // Compute new virtual position

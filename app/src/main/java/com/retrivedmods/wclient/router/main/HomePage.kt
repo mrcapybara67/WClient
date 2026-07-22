@@ -598,8 +598,8 @@ private fun GameCard() {
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
                                 Column {
-                                    Text("Mobile data mode", style = MaterialTheme.typography.bodyMedium)
-                                    Text("Use 127.0.0.1 in Minecraft", style = MaterialTheme.typography.bodySmall, color = WColors.OnSurfaceVariant)
+                                    Text("Use localhost / Apollon mode", style = MaterialTheme.typography.bodyMedium)
+                                    Text("127.0.0.1 in Minecraft (recommended)", style = MaterialTheme.typography.bodySmall, color = WColors.OnSurfaceVariant)
                                 }
                                 Switch(
                                     checked = captureModeModel.useLocalhost,

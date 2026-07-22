@@ -26,9 +26,18 @@ class OnlineLoginPacketListener(
 ) : WRelayPacketListener {
 
     private var skinData: JSONObject? = null
+    private var hasConnected = false
+    private var hasSentLogin = false
 
     override fun beforeClientBound(packet: BedrockPacket): Boolean {
         if (packet is LoginPacket) {
+            // Only initiate the server connection once. Minecraft/Apollon sometimes
+            // sends multiple LoginPackets, which would otherwise open duplicate
+            // connections and cause "already logged in" kicks on servers like DonutSMP.
+            if (hasConnected) {
+                return true
+            }
+
             if (fullBedrockSession.isExpired) {
                 println("Session expired, attempting to refresh tokens...")
 
@@ -50,6 +59,7 @@ class OnlineLoginPacketListener(
                 jws.compactSerialization = packet.clientJwt
 
                 skinData = JSONObject(JsonUtil.parseJson(jws.unverifiedPayload))
+                hasConnected = true
                 connectServer()
             } catch (e: Exception) {
                 println("Failed to process login packet: ${e.message}")
@@ -65,6 +75,8 @@ class OnlineLoginPacketListener(
     @OptIn(ExperimentalEncodingApi::class)
     override fun beforeServerBound(packet: BedrockPacket): Boolean {
         if (packet is NetworkSettingsPacket) {
+            // Always apply compression/algorithm updates so the client stays in sync even if
+            // DonutSMP/WaterdogPE sends multiple NetworkSettingsPackets.
             val threshold = packet.compressionThreshold
             if (threshold > 0) {
                 wRelaySession.client!!.setCompression(packet.compressionAlgorithm)
@@ -73,6 +85,11 @@ class OnlineLoginPacketListener(
                 wRelaySession.client!!.setCompression(PacketCompressionAlgorithm.NONE)
                 println("Compression disabled")
             }
+
+            // DonutSMP/WaterdogPE can send NetworkSettingsPacket multiple times.
+            // Only send one LoginPacket to the server to avoid "already logged in" kicks.
+            if (hasSentLogin) return true
+            hasSentLogin = true
 
             try {
                 val chain = AuthUtils.fetchOnlineChain(fullBedrockSession)

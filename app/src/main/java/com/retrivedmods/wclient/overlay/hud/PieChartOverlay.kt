@@ -252,19 +252,21 @@ class PieChartOverlay : OverlayWindow() {
             blue = AndroidColor.blue(spawnerColor) / 255f
         )
 
+        // Krypton/Glazed style: dark glass pill with neon glow and no warning symbols
         Box(
             modifier = Modifier
+                .padding(top = 6.dp)
                 .background(
-                    color.copy(alpha = 0.15f),
-                    RoundedCornerShape(4.dp)
+                    Color(0xD90B0A10),
+                    RoundedCornerShape(10.dp)
                 )
-                .padding(horizontal = 8.dp, vertical = 4.dp)
+                .padding(horizontal = 12.dp, vertical = 6.dp)
         ) {
             Text(
-                text = "⚠ SPAWNER DETECTED ($spawnerCount nearby)",
-                color = color,
+                text = "Spawners: $spawnerCount",
+                color = color.copy(alpha = 0.95f),
                 fontSize = spawnerTextSize.sp,
-                fontWeight = FontWeight.Bold
+                fontWeight = FontWeight.SemiBold
             )
         }
     }

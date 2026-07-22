@@ -262,14 +262,6 @@ class ChunkFinderModule : Module("ChunkFinder", ModuleCategory.Visual) {
                             discoveredCounts[removed.type] = (discoveredCounts[removed.type] ?: 0) - 1
                         }
 
-                        // Notify player only if the type has reached its minimum threshold
-                        val currentCount = discoveredCounts[blockType] ?: 0
-                        if (currentCount >= minCountFor(blockType)) {
-                            session.displayClientMessage(
-                                "§l§b[ChunkFinder] §r§7Found §e$blockName §7at §f${pos.x} ${pos.y} ${pos.z}"
-                            )
-                        }
-
                         updateTrackedBlocks()
                     }
                 }
