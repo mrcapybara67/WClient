@@ -62,13 +62,18 @@ echo "[4/4] Starting public tunnel (Cloudflare)..."
 $CLOUDFLARED tunnel --url "http://localhost:$PORT" > /tmp/wclient-tunnel.log 2>&1 &
 TUNNEL_PID=$!
 
-# Wait a moment then display the URL
-sleep 6
-PUBLIC_URL=$(grep -oP 'https://[a-zA-Z0-9.-]+\.trycloudflare\.com' /tmp/wclient-tunnel.log | head -1 || true)
+# Wait for the tunnel URL then display it
+PUBLIC_URL=""
+for i in {1..20}; do
+    PUBLIC_URL=$(grep -oE 'https://[a-zA-Z0-9.-]+\.trycloudflare\.com' /tmp/wclient-tunnel.log | head -1 || true)
+    [ -n "$PUBLIC_URL" ] && break
+    sleep 1
+done
+
 if [ -n "$PUBLIC_URL" ]; then
     echo "Public URL: $PUBLIC_URL"
 else
-    echo "Tunnel is starting. You can get the URL from: cat /tmp/wclient-tunnel.log"
+    echo "Tunnel is still starting. Check: cat /tmp/wclient-tunnel.log"
 fi
 
 # Keep script alive so the tunnel remains active
