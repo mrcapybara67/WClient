@@ -1,119 +1,285 @@
 <!DOCTYPE html>
-<html lang="id">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>WClient — Download</title>
-    <meta name="description" content="WClient Minecraft Bedrock client mod download page.">
+    <title>WClient — Download Minecraft Bedrock Client</title>
+    <meta name="description" content="Download WClient, a premium Minecraft Bedrock client mod featuring ChunkFinder, FreeCam bypass, and premium overlays.">
+    <meta name="theme-color" content="#0b0c15">
+    <meta property="og:title" content="WClient — Download Minecraft Bedrock Client">
+    <meta property="og:description" content="Premium Minecraft Bedrock client mod with ChunkFinder, FreeCam bypass, and premium overlays.">
+    <meta property="og:type" content="website">
+    <meta name="twitter:card" content="summary_large_image">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="style.css">
 </head>
-<body>
-    <div class="bg-glow"></div>
-    <nav class="navbar">
-        <div class="logo">
+<body class="no-js">
+    <script>document.body.classList.remove('no-js'); document.body.classList.add('js-enabled');</script>
+    <div class="noise-overlay"></div>
+    <div class="bg-shapes">
+        <div class="shape shape-1"></div>
+        <div class="shape shape-2"></div>
+        <div class="shape shape-3"></div>
+    </div>
+
+    <nav class="navbar" id="navbar">
+        <a href="#" class="logo">
             <span class="logo-icon">W</span>
-            <span>WClient</span>
-        </div>
-        <a href="#download" class="nav-link">Download</a>
+            <span class="logo-text">WClient</span>
+        </a>
+        <ul class="nav-links" id="nav-links">
+            <li><a href="#features">Features</a></li>
+            <li><a href="#download">Download</a></li>
+            <li><a href="#install">Install</a></li>
+            <li><a href="#changelog">Changelog</a></li>
+        </ul>
+        <button class="menu-toggle" id="menu-toggle" aria-label="Toggle menu" aria-expanded="false" aria-controls="nav-links">
+            <span></span><span></span><span></span>
+        </button>
     </nav>
 
     <main>
-        <section class="hero">
+        <section class="hero" id="download">
             <div class="hero-content">
-                <span class="badge">v18.1.4 Debug Build</span>
+                <div class="badge pulse" id="version-badge">v18.1.4 Debug Build</div>
                 <h1 class="hero-title">
                     <span class="gradient-text">WClient</span>
-                    <span>untuk Minecraft Bedrock</span>
+                    <span>for Minecraft Bedrock</span>
                 </h1>
                 <p class="hero-subtitle">
-                    Client mod dengan bypass verifikasi, ChunkFinder premium overlay,
-                    dan FreeCam bypass untuk DonutSMP.
+                    Premium client mod with direct verification bypass, ChunkFinder overlay,
+                    FreeCam bypass, and customizable premium HUD styles.
                 </p>
-                <div class="hero-actions">
-                    <a id="download-btn" href="WClient-v18.1.4-debug.apk" download class="btn btn-primary">
-                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
-                            <polyline points="7 10 12 15 17 10"></polyline>
-                            <line x1="12" y1="15" x2="12" y2="3"></line>
-                        </svg>
-                        Download APK
-                    </a>
-                    <a href="#install" class="btn btn-secondary">Cara Install</a>
+
+                <div class="download-card">
+                    <div class="download-main">
+                        <a id="download-btn" href="WClient-v18.1.4-debug.apk" download class="btn btn-primary btn-lg">
+                            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                                <polyline points="7 10 12 15 17 10"></polyline>
+                                <line x1="12" y1="15" x2="12" y2="3"></line>
+                            </svg>
+                            Download APK
+                        </a>
+                        <div class="file-meta">
+                            <span class="file-size" id="apk-size">~78 MB</span>
+                            <span class="divider"></span>
+                            <span class="file-android">Android 9.0+</span>
+                        </div>
+                    </div>
+
+                    <div class="qr-section">
+                        <div class="qr-label">Scan to download</div>
+                        <canvas id="qr-canvas" width="120" height="120"></canvas>
+                    </div>
                 </div>
-                <div class="download-meta">
-                    <span id="apk-size">~78 MB</span>
-                    <span class="dot"></span>
-                    <span>Android 9.0+</span>
+
+                <div class="hero-actions">
+                    <button class="btn btn-ghost" id="copy-link-btn">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.72"></path>
+                            <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.72-1.72"></path>
+                        </svg>
+                        Copy link
+                    </button>
+                    <a href="#install" class="btn btn-secondary">How to install</a>
                 </div>
             </div>
-            <div class="hero-card">
-                <div class="card-glass">
-                    <h3>Fitur Utama</h3>
+
+            <div class="hero-card-wrapper">
+                <div class="hero-card">
+                    <h3 class="card-title">Latest Build</h3>
                     <ul class="feature-list">
-                        <li><span class="icon">✓</span> Bypass verifikasi langsung ke menu</li>
-                        <li><span class="icon">✓</span> ChunkFinder dengan threshold block</li>
-                        <li><span class="icon">✓</span> Overlay premium Glazed / Krypton style</li>
-                        <li><span class="icon">✓</span> FreeCam DonutSMP bypass ke Y -64</li>
+                        <li>
+                            <span class="check">✓</span>
+                            <span>Bypass verification to main menu</span>
+                        </li>
+                        <li>
+                            <span class="check">✓</span>
+                            <span>ChunkFinder with block threshold</span>
+                        </li>
+                        <li>
+                            <span class="check">✓</span>
+                            <span>FreeCam teleport bypass to Y -64</span>
+                        </li>
+                        <li>
+                            <span class="check">✓</span>
+                            <span>Krypton / Glazed overlay styles</span>
+                        </li>
                     </ul>
+                    <div class="card-footer">
+                        <span class="status-dot"></span>
+                        <span>Verified build</span>
+                    </div>
                 </div>
             </div>
         </section>
 
         <section class="features" id="features">
-            <h2 class="section-title">Apa yang baru?</h2>
-            <div class="grid">
+            <h2 class="section-title">Powerful Features</h2>
+            <div class="features-grid">
                 <article class="feature-card">
-                    <div class="card-icon">🔍</div>
+                    <div class="feature-icon">🔍</div>
                     <h3>ChunkFinder</h3>
-                    <p>Pilih minimum block count untuk End Stone, Cobbled Deepslate, Deepslate, dan Rotated Deepslate.</p>
+                    <p>Set minimum block thresholds and locate End Stone, Cobbled Deepslate, Deepslate, and more.</p>
                 </article>
                 <article class="feature-card">
-                    <div class="card-icon">✨</div>
+                    <div class="feature-icon">✨</div>
                     <h3>Premium Overlay</h3>
-                    <p>Overlay baru dengan neon glow, soft fill, sharp outline, dan label text pill.</p>
+                    <p>Neon glow, soft fill, sharp outlines, and label text pills for a clean modern HUD.</p>
                 </article>
                 <article class="feature-card">
-                    <div class="card-icon">🎥</div>
+                    <div class="feature-icon">🎥</div>
                     <h3>FreeCam Bypass</h3>
-                    <p>FreeCam sekarang pakai teleport packet agar bisa turun sampai Y -64 di DonutSMP.</p>
+                    <p>Uses teleport packets so your camera can descend all the way to Y -64 on supported servers.</p>
+                </article>
+                <article class="feature-card">
+                    <div class="feature-icon">🔓</div>
+                    <h3>Direct Access</h3>
+                    <p>Skip verification and jump straight into the game menu without extra login steps.</p>
+                </article>
+                <article class="feature-card">
+                    <div class="feature-icon">⚡</div>
+                    <h3>WRelay Integration</h3>
+                    <p>Built-in relay support for seamless server connections and LAN-like mobile data play.</p>
+                </article>
+                <article class="feature-card">
+                    <div class="feature-icon">🎨</div>
+                    <h3>Customizable UI</h3>
+                    <p>Multiple overlay styles, colors, and fonts so you can match your personal setup.</p>
                 </article>
             </div>
         </section>
 
+        <section class="file-details" id="file-details">
+            <h2 class="section-title">File Details</h2>
+            <div class="details-card">
+                <div class="detail-row">
+                    <span class="detail-label">File name</span>
+                    <span class="detail-value" id="file-name">WClient-v18.1.4-debug.apk</span>
+                </div>
+                <div class="detail-row">
+                    <span class="detail-label">Version</span>
+                    <span class="detail-value">v18.1.4 Debug</span>
+                </div>
+                <div class="detail-row">
+                    <span class="detail-label">Size</span>
+                    <span class="detail-value" id="file-size-detail">~78 MB</span>
+                </div>
+                <div class="detail-row">
+                    <span class="detail-label">Release date</span>
+                    <span class="detail-value">July 2026</span>
+                </div>
+                <div class="detail-row">
+                    <span class="detail-label">Minimum Android</span>
+                    <span class="detail-value">Android 9.0 (API 28)</span>
+                </div>
+                <div class="detail-row checksum-row">
+                    <span class="detail-label">SHA-256</span>
+                    <span class="detail-value checksum" id="checksum">1e2f4ed04773efc84b761d5c8f0cf8837c7178651615509fdcbf8c566a7bde8a</span>
+                </div>
+            </div>
+        </section>
+
+        <section class="changelog" id="changelog">
+            <h2 class="section-title">Changelog</h2>
+            <div class="changelog-list">
+                <div class="changelog-item">
+                    <div class="changelog-dot"></div>
+                    <div class="changelog-content">
+                        <h4>v18.1.4 — Debug Fix</h4>
+                        <span class="changelog-date">Latest</span>
+                        <ul>
+                            <li>Switched to debug APK to resolve startup crash on some devices.</li>
+                            <li>Added comprehensive ProGuard keep rules for release builds.</li>
+                            <li>Apollon/LAN binding fix.</li>
+                            <li>Silent spawner and ChunkFinder bypass improvements.</li>
+                            <li>Krypton/Glazed overlay style updates.</li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="changelog-item">
+                    <div class="changelog-dot"></div>
+                    <div class="changelog-content">
+                        <h4>v18.1.2 — Relay Update</h4>
+                        <ul>
+                            <li>Use WRelay for all servers.</li>
+                            <li>Dropped armeabi-v7a support.</li>
+                            <li>Removed large GIF and debug tooling dependencies.</li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="changelog-item">
+                    <div class="changelog-dot"></div>
+                    <div class="changelog-content">
+                        <h4>v18.1.0 — Initial Release</h4>
+                        <ul>
+                            <li>First public WClient build.</li>
+                            <li>Added verification bypass, overlay system, and relay support.</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </section>
+
         <section class="install" id="install">
-            <h2 class="section-title">Cara Install</h2>
+            <h2 class="section-title">How to Install</h2>
             <div class="steps">
                 <div class="step">
-                    <span class="step-number">01</span>
-                    <h4>Download APK</h4>
-                    <p>Tekan tombol download di atas untuk menyimpan file APK ke HP.</p>
+                    <div class="step-header">
+                        <span class="step-number">1</span>
+                        <h4>Download the APK</h4>
+                    </div>
+                    <p>Tap the download button and save the APK file to your Android device.</p>
                 </div>
                 <div class="step">
-                    <span class="step-number">02</span>
-                    <h4>Izinkan Unknown Sources</h4>
-                    <p>Buka Pengaturan → Aplikasi → Akses spesial → Instal aplikasi tidak dikenal, lalu izinkan File Manager.</p>
+                    <div class="step-header">
+                        <span class="step-number">2</span>
+                        <h4>Allow unknown sources</h4>
+                    </div>
+                    <p>Open Settings → Apps → Special access → Install unknown apps, then allow your file manager.</p>
                 </div>
                 <div class="step">
-                    <span class="step-number">03</span>
-                    <h4>Install & Mainkan</h4>
-                    <p>Buka file APK, tekan Install. Jika gagal, uninstall WClient lama terlebih dahulu.</p>
+                    <div class="step-header">
+                        <span class="step-number">3</span>
+                        <h4>Install and play</h4>
+                    </div>
+                    <p>Open the downloaded APK and tap Install. If it fails, uninstall the old version first, then retry.</p>
                 </div>
             </div>
         </section>
 
         <section class="warning">
-            <h4>⚠️ Perhatian</h4>
-            <p>APK ini adalah build release terbaru. Gunakan dengan risiko sendiri. Akun Microsoft/Minecraft bisa terkena risiko karena ini adalah cheat client.</p>
+            <div class="warning-icon">⚠️</div>
+            <div class="warning-content">
+                <h4>Important Notice</h4>
+                <p>WClient is a third-party modification for Minecraft Bedrock. Using it may violate Minecraft's Terms of Service and can result in account restrictions or bans. Download and use it at your own risk. This build is intended for educational and personal use only.</p>
+            </div>
         </section>
     </main>
 
     <footer class="footer">
-        <p>&copy; 2026 WClient. Dibuat untuk keperluan edukasi/pribadi.</p>
+        <div class="footer-content">
+            <div class="footer-brand">
+                <span class="logo-icon small">W</span>
+                <span>WClient</span>
+            </div>
+            <p class="footer-copy">© 2026 WClient. Built for educational and personal use.</p>
+        </div>
     </footer>
 
+    <div class="mobile-download" id="mobile-download">
+        <a href="WClient-v18.1.4-debug.apk" download class="btn btn-primary btn-block">
+            Download WClient APK
+        </a>
+    </div>
+
+    <div class="toast" id="toast" role="status" aria-live="polite" aria-atomic="true"></div>
+
+    <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
     <script src="script.js"></script>
 </body>
 </html>
