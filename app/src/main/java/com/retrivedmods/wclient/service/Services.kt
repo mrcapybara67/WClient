@@ -105,10 +105,14 @@ object Services {
                     captureModeModel.serverPort
                 )
 
-                // Always bind to 0.0.0.0 so the relay is reachable from both loopback
-                // (127.0.0.1 / localhost) and LAN, which is required by some third-party
-                // clients such as Apollon Client.
-                val bindAddress = WAddress("0.0.0.0", 19132)
+                // Bind to 127.0.0.1 when the user is in localhost/Apollon mode to avoid
+                // Android kernel quirks with 0.0.0.0 on some devices (Vivo/OPPO). Bind
+                // to 0.0.0.0 for LAN mode so other devices on the network can reach us.
+                val bindAddress = if (captureModeModel.useLocalhost) {
+                    WAddress("127.0.0.1", 19132)
+                } else {
+                    WAddress("0.0.0.0", 19132)
+                }
 
                 val serverConfig = getServerConfig(captureModeModel)
                 // Always use WRelay directly. It handles both protected and non-protected

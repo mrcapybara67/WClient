@@ -1,5 +1,5 @@
 document.addEventListener('DOMContentLoaded', () => {
-    const APK_NAME = 'WClient-v18.1.7-debug.apk';
+    const APK_NAME = 'WClient-v18.1.8-debug.apk';
     const downloadBtn = document.getElementById('download-btn');
     const apkSizeEl = document.getElementById('apk-size');
     const fileSizeDetailEl = document.getElementById('file-size-detail');
@@ -38,35 +38,6 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     fetchFileSize();
-
-    // Generate QR code for the current download URL
-    const generateQRCode = () => {
-        const canvas = document.getElementById('qr-canvas');
-        if (!canvas || typeof QRCode === 'undefined') return;
-
-        const downloadUrl = new URL(APK_NAME, window.location.href).href;
-
-        try {
-            QRCode.toCanvas(canvas, downloadUrl, {
-                width: 120,
-                margin: 1,
-                color: {
-                    dark: '#0b0c15',
-                    light: '#ffffff'
-                }
-            }, (error) => {
-                if (error) {
-                    console.warn('QR code generation failed:', error);
-                    const qrSection = canvas.closest('.qr-section');
-                    if (qrSection) qrSection.style.display = 'none';
-                }
-            });
-        } catch (error) {
-            console.warn('QR code generation error:', error);
-        }
-    };
-
-    generateQRCode();
 
     // Show toast notification
     const showToast = (message, type = 'info') => {

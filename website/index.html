@@ -43,7 +43,7 @@
     <main>
         <section class="hero" id="download">
             <div class="hero-content">
-                <div class="badge pulse" id="version-badge">v18.1.7 Debug Build</div>
+                <div class="badge pulse" id="version-badge">v18.1.8 Debug Build</div>
                 <h1 class="hero-title">
                     <span class="gradient-text">WClient</span>
                     <span>for Minecraft Bedrock</span>
@@ -53,9 +53,9 @@
                     FreeCam bypass, and customizable premium HUD styles.
                 </p>
 
-                <div class="download-card">
+                <div class="download-card gradient-border">
                     <div class="download-main">
-                        <a id="download-btn" href="WClient-v18.1.7-debug.apk" download class="btn btn-primary btn-lg">
+                        <a id="download-btn" href="WClient-v18.1.8-debug.apk" download class="btn btn-primary btn-lg">
                             <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
                                 <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
                                 <polyline points="7 10 12 15 17 10"></polyline>
@@ -70,10 +70,6 @@
                         </div>
                     </div>
 
-                    <div class="qr-section">
-                        <div class="qr-label">Scan to download</div>
-                        <canvas id="qr-canvas" width="120" height="120"></canvas>
-                    </div>
                 </div>
 
                 <div class="hero-actions">
@@ -157,11 +153,11 @@
             <h2 class="section-title">File Details</h2>
             <div class="details-card">
                 <div class="detail-row">
-                    <span class="detail-label">File name</span>                            <span class="detail-value" id="file-name">WClient-v18.1.7-debug.apk</span>
+                    <span class="detail-label">File name</span>                            <span class="detail-value" id="file-name">WClient-v18.1.8-debug.apk</span>
                 </div>
                 <div class="detail-row">
                     <span class="detail-label">Version</span>
-                    <span class="detail-value">v18.1.7 Debug</span>
+                    <span class="detail-value">v18.1.8 Debug</span>
                 </div>
                 <div class="detail-row">
                     <span class="detail-label">Size</span>
@@ -188,8 +184,20 @@
                 <div class="changelog-item">
                     <div class="changelog-dot"></div>
                     <div class="changelog-content">
-                        <h4>v18.1.7 — InitialConnection-90 Fix #2</h4>
+                        <h4>v18.1.8 — InitialConnection-90 Fix #3</h4>
                         <span class="changelog-date">Latest</span>
+                        <ul>
+                            <li>Reverted to default Cloudburst RakNet options.</li>
+                            <li>Bind to 127.0.0.1 in localhost/Apollon mode to avoid Android kernel quirks.</li>
+                            <li>Made rate limiter removal safe with try/catch.</li>
+                            <li>Website redesign: removed QR code, added glow effects.</li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="changelog-item">
+                    <div class="changelog-dot"></div>
+                    <div class="changelog-content">
+                        <h4>v18.1.7 — InitialConnection-90 Fix #2</h4>
                         <ul>
                             <li>Added support for both RakNet protocols 11 and 10.</li>
                             <li>Added server MTU bounds (576–1492).</li>
@@ -303,7 +311,7 @@
     </footer>
 
     <div class="mobile-download" id="mobile-download">
-        <a href="WClient-v18.1.7-debug.apk" download class="btn btn-primary btn-block">
+        <a href="WClient-v18.1.8-debug.apk" download class="btn btn-primary btn-block">
             Download WClient APK
         </a>
     </div>
