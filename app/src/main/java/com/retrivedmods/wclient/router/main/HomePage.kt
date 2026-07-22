@@ -275,11 +275,30 @@ fun HomePageContent() {
                 if (mainScreenViewModel.captureModeModel.value.useLocalhost) "127.0.0.1"
                 else {
                     runCatching {
-                        NetworkInterface.getNetworkInterfaces().asSequence()
+                        val interfaces = NetworkInterface.getNetworkInterfaces().asSequence()
+                            .filter { it.isUp && !it.isLoopback && !it.isVirtual }
+                            .toList()
+
+                        // Prefer Wi-Fi/Ethernet interfaces for LAN connections and ignore
+                        // cellular/VPN/virtual interfaces so Minecraft can actually reach us.
+                        val preferred = interfaces
+                            .filter { name ->
+                                val n = name.name.lowercase()
+                                n.startsWith("wlan") || n.startsWith("eth") || n.startsWith("en")
+                            }
                             .flatMap { it.inetAddresses.asSequence() }
                             .filterIsInstance<Inet4Address>()
                             .firstOrNull { !it.isLoopbackAddress }
-                            ?.hostAddress
+                            ?: interfaces
+                                .filter { name ->
+                                    val n = name.name.lowercase()
+                                    !n.startsWith("tun") && !n.startsWith("rmnet") && !n.startsWith("dummy") && !n.startsWith("veth")
+                                }
+                                .flatMap { it.inetAddresses.asSequence() }
+                                .filterIsInstance<Inet4Address>()
+                                .firstOrNull { !it.isLoopbackAddress }
+
+                        preferred?.hostAddress ?: "127.0.0.1"
                     }.getOrNull() ?: "127.0.0.1"
                 }
             }

@@ -43,7 +43,7 @@
     <main>
         <section class="hero" id="download">
             <div class="hero-content">
-                <div class="badge pulse" id="version-badge">v18.1.4 Debug Build</div>
+                <div class="badge pulse" id="version-badge">v18.1.5 Debug Build</div>
                 <h1 class="hero-title">
                     <span class="gradient-text">WClient</span>
                     <span>for Minecraft Bedrock</span>
@@ -55,7 +55,7 @@
 
                 <div class="download-card">
                     <div class="download-main">
-                        <a id="download-btn" href="WClient-v18.1.4-debug.apk" download class="btn btn-primary btn-lg">
+                        <a id="download-btn" href="WClient-v18.1.5-debug.apk" download class="btn btn-primary btn-lg">
                             <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
                                 <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
                                 <polyline points="7 10 12 15 17 10"></polyline>
@@ -157,12 +157,11 @@
             <h2 class="section-title">File Details</h2>
             <div class="details-card">
                 <div class="detail-row">
-                    <span class="detail-label">File name</span>
-                    <span class="detail-value" id="file-name">WClient-v18.1.4-debug.apk</span>
+                    <span class="detail-label">File name</span>                            <span class="detail-value" id="file-name">WClient-v18.1.5-debug.apk</span>
                 </div>
                 <div class="detail-row">
                     <span class="detail-label">Version</span>
-                    <span class="detail-value">v18.1.4 Debug</span>
+                    <span class="detail-value">v18.1.5 Debug</span>
                 </div>
                 <div class="detail-row">
                     <span class="detail-label">Size</span>
@@ -189,8 +188,19 @@
                 <div class="changelog-item">
                     <div class="changelog-dot"></div>
                     <div class="changelog-content">
-                        <h4>v18.1.4 — Debug Fix</h4>
+                        <h4>v18.1.5 — IP & Stability Fix</h4>
                         <span class="changelog-date">Latest</span>
+                        <ul>
+                            <li>Fixed LAN IP detection to prefer Wi-Fi/Ethernet interfaces.</li>
+                            <li>Filtered out VPN/mobile/virtual interfaces from the displayed IP.</li>
+                            <li>Removed redundant Compose compiler feature flags.</li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="changelog-item">
+                    <div class="changelog-dot"></div>
+                    <div class="changelog-content">
+                        <h4>v18.1.4 — Debug Fix</h4>
                         <ul>
                             <li>Switched to debug APK to resolve startup crash on some devices.</li>
                             <li>Added comprehensive ProGuard keep rules for release builds.</li>
@@ -271,7 +281,7 @@
     </footer>
 
     <div class="mobile-download" id="mobile-download">
-        <a href="WClient-v18.1.4-debug.apk" download class="btn btn-primary btn-block">
+        <a href="WClient-v18.1.5-debug.apk" download class="btn btn-primary btn-block">
             Download WClient APK
         </a>
     </div>
