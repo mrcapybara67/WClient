@@ -3,6 +3,7 @@ package com.retrivedmods.wrelay
 import com.retrivedmods.wrelay.WRelaySession.ClientSession
 import com.retrivedmods.wrelay.address.WAddress
 import com.retrivedmods.wrelay.address.inetSocketAddress
+import com.retrivedmods.wrelay.client.ClientIdentification
 import com.retrivedmods.wrelay.codec.CodecRegistry
 import com.retrivedmods.wrelay.config.EnhancedServerConfig
 import com.retrivedmods.wrelay.connection.ConnectionManager
@@ -93,6 +94,8 @@ class WRelay(
             .channelFactory(RakChannelFactory.server(NioDatagramChannel::class.java))
             .option(RakChannelOption.RAK_ADVERTISEMENT, advertisement.toByteBuf())
             .option(RakChannelOption.RAK_GUID, Random.nextLong())
+            .option(RakChannelOption.RAK_SUPPORTED_PROTOCOLS, intArrayOf(11))
+            .option(RakChannelOption.RAK_UNCONNECTED_MAGIC, ClientIdentification.createMinecraftUnconnectedMagic())
             .childHandler(object : BedrockChannelInitializer<WRelaySession.ServerSession>() {
 
                 override fun createSession0(peer: BedrockPeer, subClientId: Int): WRelaySession.ServerSession {
