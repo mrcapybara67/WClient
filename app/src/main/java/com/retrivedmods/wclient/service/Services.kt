@@ -48,6 +48,7 @@ object Services {
     var detectedMinecraftVersion by mutableStateOf<String?>(null)
     var relayPort by mutableStateOf(19132)
     var relayHost by mutableStateOf("0.0.0.0")
+    var loopbackReachable by mutableStateOf<Boolean?>(null)
 
     fun toggle(context: Context, captureModeModel: CaptureModeModel) {
         if (!isActive) {
@@ -146,12 +147,22 @@ object Services {
                     listeners.add(GamingPacketHandler(this))
                 }
 
-                relayPort = wRelay?.localAddress?.port ?: 19132
-                relayHost = wRelay?.localAddress?.hostName ?: "0.0.0.0"
-                Log.d("Services", "WRelay bound to $relayHost:$relayPort")
+                val boundPort = wRelay?.localAddress?.port ?: 19132
+                val boundHost = wRelay?.localAddress?.hostName ?: "0.0.0.0"
+                Log.d("Services", "WRelay bound to $boundHost:$boundPort")
 
-                if (relayPort != 19132) {
-                    context.toast("Relay using fallback port $relayPort")
+                val loopbackOk = testLocalUdp(boundPort)
+                Log.d("Services", "Local UDP 127.0.0.1 reachable: $loopbackOk")
+
+                handler.post {
+                    relayPort = boundPort
+                    relayHost = boundHost
+                    loopbackReachable = loopbackOk
+                    if (!loopbackOk) {
+                        context.toast("Loopback UDP blocked, use the LAN IP shown")
+                    } else if (boundPort != 19132) {
+                        context.toast("Relay using fallback port $boundPort")
+                    }
                 }
             }.exceptionOrNull()?.let {
                 it.printStackTrace()
@@ -181,6 +192,7 @@ object Services {
             wRelay = null
             relayPort = 19132
             relayHost = "0.0.0.0"
+            loopbackReachable = null
 
             try {
                 AppContext.instance.stopService(Intent(AppContext.instance, RelayService::class.java))
@@ -282,6 +294,33 @@ object Services {
             ServerCompatUtils.ServerConfigType.DEFAULT -> EnhancedServerConfig.DEFAULT
             ServerCompatUtils.ServerConfigType.AGGRESSIVE -> EnhancedServerConfig.AGGRESSIVE
             ServerCompatUtils.ServerConfigType.STANDARD -> EnhancedServerConfig.DEFAULT
+        }
+    }
+
+    /**
+     * Verify whether the local loopback UDP socket is reachable from this app.
+     * Returns true if we can send a tiny UDP packet to 127.0.0.1 and read a reply.
+     */
+    private fun testLocalUdp(port: Int): Boolean {
+        return try {
+            java.net.DatagramSocket().use { socket ->
+                socket.soTimeout = 1500
+                // Unconnected Ping first byte is 0x01 in RakNet
+                val data = byteArrayOf(0x01)
+                val packet = java.net.DatagramPacket(
+                    data,
+                    data.size,
+                    java.net.InetAddress.getByName("127.0.0.1"),
+                    port
+                )
+                socket.send(packet)
+                val buffer = ByteArray(256)
+                val receive = java.net.DatagramPacket(buffer, buffer.size)
+                socket.receive(receive)
+                true
+            }
+        } catch (e: Exception) {
+            false
         }
     }
 }

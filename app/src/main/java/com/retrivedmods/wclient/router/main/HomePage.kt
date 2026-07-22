@@ -271,8 +271,13 @@ fun HomePageContent() {
 
 
         if (showConnectionDialog) {
-            val ipAddress = remember(mainScreenViewModel.captureModeModel.value.useLocalhost) {
-                if (mainScreenViewModel.captureModeModel.value.useLocalhost) "127.0.0.1"
+            val ipAddress = remember(
+                mainScreenViewModel.captureModeModel.value.useLocalhost,
+                Services.loopbackReachable
+            ) {
+                val useLoopback = mainScreenViewModel.captureModeModel.value.useLocalhost
+                        && Services.loopbackReachable != false
+                if (useLoopback) "127.0.0.1"
                 else {
                     runCatching {
                         val interfaces = NetworkInterface.getNetworkInterfaces().asSequence()
@@ -334,6 +339,18 @@ fun HomePageContent() {
                             Column(modifier = Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
                                 Text("Relay status", style = MaterialTheme.typography.titleSmall, color = WColors.Accent, fontWeight = FontWeight.Bold)
                                 Text("Listening on ${Services.relayHost}:${Services.relayPort}", style = MaterialTheme.typography.bodyMedium)
+                            }
+                        }
+
+                        if (Services.loopbackReachable == false) {
+                            Card(
+                                modifier = Modifier.fillMaxWidth(),
+                                colors = CardDefaults.cardColors(containerColor = WColors.Error.copy(alpha = 0.1f))
+                            ) {
+                                Column(modifier = Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                                    Text("Loopback UDP blocked", style = MaterialTheme.typography.titleSmall, color = WColors.Error, fontWeight = FontWeight.Bold)
+                                    Text("127.0.0.1 is unreachable on this device. Use the exact Wi-Fi IP shown below in Minecraft.", style = MaterialTheme.typography.bodySmall, color = WColors.Error)
+                                }
                             }
                         }
 

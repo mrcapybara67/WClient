@@ -8,8 +8,11 @@ import com.retrivedmods.wrelay.config.EnhancedServerConfig
 import com.retrivedmods.wrelay.connection.ConnectionManager
 import com.retrivedmods.wrelay.util.ServerCompatUtils
 import io.netty.bootstrap.ServerBootstrap
+import io.netty.buffer.ByteBuf
 import io.netty.channel.Channel
 import io.netty.channel.ChannelFuture
+import io.netty.channel.ChannelHandlerContext
+import io.netty.channel.ChannelInboundHandlerAdapter
 import io.netty.channel.nio.NioEventLoopGroup
 import io.netty.channel.socket.nio.NioDatagramChannel
 import kotlinx.coroutines.*
@@ -128,6 +131,15 @@ class WRelay(
                         override fun preInitChannel(channel: Channel) {
                             println("WRelay: preInitChannel for incoming client")
                             channel.attr(PacketDirection.ATTRIBUTE).set(PacketDirection.CLIENT_BOUND)
+                            channel.pipeline().addFirst("raw_packet_logger", object : ChannelInboundHandlerAdapter() {
+                                override fun channelRead(ctx: ChannelHandlerContext, msg: Any) {
+                                    if (msg is ByteBuf && msg.isReadable) {
+                                        val firstByte = msg.getUnsignedByte(msg.readerIndex())
+                                        println("[RAW IN] Packet first byte: 0x${firstByte.toString(16)} from ${ctx.channel().remoteAddress()}")
+                                    }
+                                    super.channelRead(ctx, msg)
+                                }
+                            })
                             super.preInitChannel(channel)
                         }
 
