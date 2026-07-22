@@ -3,7 +3,6 @@ package com.retrivedmods.wrelay.listener
 import com.retrivedmods.wrelay.WRelaySession
 import com.retrivedmods.wrelay.util.AuthUtils
 import com.retrivedmods.wrelay.util.refresh
-import net.kyori.adventure.text.Component
 import net.raphimc.minecraftauth.step.bedrock.session.StepFullBedrockSession
 import org.cloudburstmc.protocol.bedrock.data.PacketCompressionAlgorithm
 import org.cloudburstmc.protocol.bedrock.data.auth.AuthType
@@ -14,7 +13,6 @@ import org.cloudburstmc.protocol.bedrock.util.JsonUtils
 import org.jose4j.json.JsonUtil
 import org.jose4j.json.internal.json_simple.JSONObject
 import org.jose4j.jws.JsonWebSignature
-import org.jose4j.jwx.HeaderParameterNames
 import kotlin.io.encoding.Base64
 import kotlin.io.encoding.ExperimentalEncodingApi
 
@@ -26,15 +24,14 @@ class OnlineLoginPacketListener(
 ) : WRelayPacketListener {
 
     private var skinData: JSONObject? = null
-    private var hasConnected = false
     private var hasSentLogin = false
 
     override fun beforeClientBound(packet: BedrockPacket): Boolean {
         if (packet is LoginPacket) {
-            // Only initiate the server connection once. Minecraft/Apollon sometimes
-            // sends multiple LoginPackets, which would otherwise open duplicate
-            // connections and cause "already logged in" kicks on servers like DonutSMP.
-            if (hasConnected) {
+            // Allow the client to retry LoginPacket if the first proxy-to-server
+            // connection stalls (UDP packet loss on loopback). Once the upstream
+            // server session is established, further LoginPackets are ignored.
+            if (wRelaySession.client != null) {
                 return true
             }
 
@@ -59,7 +56,6 @@ class OnlineLoginPacketListener(
                 jws.compactSerialization = packet.clientJwt
 
                 skinData = JSONObject(JsonUtil.parseJson(jws.unverifiedPayload))
-                hasConnected = true
                 connectServer()
             } catch (e: Exception) {
                 println("Failed to process login packet: ${e.message}")
